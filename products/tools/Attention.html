@@ -845,9 +845,16 @@
 
         function blockCountGenerateBlocks() {
             // ... (this function remains the same)
+            var minBs = settings.minBlocks - 2;
+            var maxBs;
+            if(settings.maxBlocks > 10){
+                maxBs = settings.minBlocks - 1;
+                maxBs = settings.maxBlocks - 8
+            }
+            
             bcCurrentBlocks = [];
             const settings = BC_DIFFICULTY_SETTINGS[bcDifficulty];
-            const targetBlockCount = Math.floor(Math.random() * (settings.maxBlocks - settings.minBlocks + 1)) + settings.minBlocks;
+            const targetBlockCount = Math.floor(Math.random() * (maxBs - minBs + 1)) + minBs;
             
             let placedBlockCount = 0;
             const stackHeights = Array(BC_GRID_COLS).fill(null).map(() => Array(BC_GRID_ROWS).fill(0));
@@ -974,12 +981,6 @@
 
             if (moveBlocks) {
                 bcMessage.textContent = "记住移动中的方块数量...";
-
-                settings.minBlocks -= 2;
-                if(settings.maxBlocks > 10){
-                    settings.minBlocks -= 1;
-                    settings.maxBlocks -= 8
-                }
 
                 currentRevealTime = Math.random() * (settings.moveRevealMax - settings.moveRevealMin) + settings.moveRevealMin;
                 
