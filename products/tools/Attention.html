@@ -150,11 +150,12 @@
         }
 
         /* Timer and Button Styles */
-        .timer-display {
-            font-size: 3rem; /* Even larger timer font */
+        .timer-display { /* Also used for score displays in some modes */
+            font-size: 2rem; /* Adjusted for score/round display */
             font-weight: 700;
             color: #f8fafc; /* Very light color for timer */
             margin-bottom: 1rem;
+            min-height: 2.5rem; /* Ensure space even if empty initially */
         }
         .button {
             background-color: #3b82f6; /* Blue button */
@@ -225,17 +226,24 @@
             border-color: #3b82f6;
             box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.5);
         }
-        .countdown-display {
+        .countdown-display { /* General countdown, also for Memory Matrix */
             font-size: 5rem; /* Large countdown numbers */
             font-weight: 900;
             color: #f8fafc;
-            position: absolute; /* Position over the grid */
+            position: absolute; /* Position over the grid or display area */
             top: 50%;
             left: 50%;
             transform: translate(-50%, -50%);
             z-index: 10; /* Ensure it's on top */
             text-shadow: 0 0 15px rgba(0,0,0,0.8);
         }
+        .countdown-display.small { /* For next round countdowns */
+             font-size: 2.5rem;
+             bottom: 15%; /* Position towards bottom for less intrusion */
+             top: auto;
+             transform: translate(-50%, 0);
+        }
+
 
         /* Stroop Effect Specific Styles */
         .stroop-word {
@@ -352,13 +360,74 @@
             animation: shake 0.3s ease-in-out;
         }
 
+        /* Block Count (New Mode) Specific Styles */
+        .blockCount-svg-container {
+            width: 100%;
+            max-width: 500px; 
+            aspect-ratio: 1 / 0.8; 
+            margin: 0 auto;
+            border: 1px solid #64748b;
+            border-radius: 0.25rem;
+            background-color: #394251; 
+            position: relative; 
+            overflow: hidden; /* Crucial: This is the viewport */
+        }
+        #blockCount-svg { /* This is the main SVG canvas, it doesn't move */
+            display: block;
+            width: 100%;
+            height: 100%;
+        }
+        /* We will transform a <g> element inside the SVG instead */
+        #blockCount-svg-group { /* Style for the group that will hold and move blocks */
+            /* transition property will be set by JavaScript dynamically */
+            transform: translate(0,0); /* Default position */
+        }
+        .blockCount-numpad {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 0.5rem;
+            width: 100%;
+            max-width: 250px; /* Numpad size */
+            margin: 1rem auto 0;
+        }
+        .blockCount-numpad button {
+            background-color: #4a5568;
+            color: #e2e8f0;
+            padding: 0.8rem;
+            border-radius: 0.5rem;
+            font-size: 1.2rem;
+            font-weight: 600;
+            cursor: pointer;
+            border: none;
+            transition: background-color 0.2s ease, transform 0.1s ease;
+        }
+        .blockCount-numpad button:hover {
+            background-color: #64748b;
+            transform: translateY(-1px);
+        }
+        .blockCount-numpad button:active {
+            transform: translateY(0);
+        }
+        .blockCount-input-display {
+            grid-column: 1 / -1; /* Span all columns */
+            background-color: #1a202c;
+            color: #f8fafc;
+            padding: 0.5rem;
+            border-radius: 0.375rem;
+            min-height: 2.5rem;
+            font-size: 1.5rem;
+            text-align: right;
+            margin-bottom: 0.5rem;
+            border: 1px solid #64748b;
+        }
+
 
         /* Responsive adjustments */
         @media (max-width: 640px) {
             .container { padding: 1rem; gap: 0.75rem; }
             .grid-cell { font-size: 1.6rem; }
             .schulte-grid-cell-7x7 { font-size: 1.2rem; }
-            .timer-display { font-size: 2.5rem; }
+            .timer-display { font-size: 1.8rem; min-height: 2.2rem; } /* Adjusted general timer/score display */
             .button { padding: 0.6rem 1.2rem; font-size: 0.9rem; }
             .navigation-select { padding: 0.5rem 1rem; font-size: 0.85rem; padding-right: 2rem; }
             .stroop-word { font-size: 3rem; }
@@ -367,17 +436,26 @@
             .nback-display-item { font-size: 4rem; }
             .visual-search-target-display { font-size: 2rem; }
             .visual-search-cell { font-size: 1.2rem; }
+            .blockCount-svg-container { max-width: 400px; }
+            .blockCount-numpad { max-width: 220px; }
+            .blockCount-numpad button {padding: 0.6rem; font-size: 1rem;}
+            .blockCount-input-display { font-size: 1.2rem; min-height: 2rem; }
+            .countdown-display { font-size: 3.5rem; }
+            .countdown-display.small { font-size: 2rem; }
         }
         @media (max-width: 480px) {
             .grid-cell { font-size: 1.4rem; }
             .schulte-grid-cell-7x7 { font-size: 1rem; }
-            .timer-display { font-size: 2rem; }
+            .timer-display { font-size: 1.5rem; min-height: 2rem; }
             .navigation-select { width: 100%; }
             .stroop-word { font-size: 2.5rem; }
-            .countdown-display { font-size: 4rem; }
+            .countdown-display { font-size: 3rem; }
+            .countdown-display.small { font-size: 1.8rem; }
             .nback-display-item { font-size: 3rem; }
             .visual-search-target-display { font-size: 1.8rem; }
             .visual-search-cell { font-size: 1rem; }
+            .blockCount-svg-container { max-width: 320px; }
+            .blockCount-numpad { max-width: 200px; }
         }
     </style>
 </head>
@@ -390,6 +468,7 @@
                 <option value="stroop">斯特鲁普效应</option>
                 <option value="nback">N-Back 训练</option>
                 <option value="visualSearch">视觉搜索</option>
+                <option value="blockCount">方块数量记忆</option>
             </select>
         </div>
 
@@ -417,7 +496,6 @@
                         <option value="hard">困难</option>
                     </select>
                 </label>
-                <!-- Removed checkbox for moving grid, now randomized by difficulty -->
             </div>
             <div id="memory-timer" class="timer-display">00:00.00</div>
             <div id="memory-countdown" class="countdown-display hidden"></div>
@@ -468,6 +546,33 @@
             <button id="visualSearchStartButton" class="button mt-4">开始视觉搜索</button>
             <div id="visualSearch-message" class="message">点击 '开始视觉搜索' 按钮</div>
         </div>
+
+        <div id="blockCount-mode" class="game-mode hidden">
+            <div class="difficulty-options">
+                <label>难度系数:
+                    <select id="blockCountDifficultySelect">
+                        <option value="easy">简单</option>
+                        <option value="medium" selected>中等</option>
+                        <option value="hard">困难</option>
+                    </select>
+                </label>
+            </div>
+            <div id="blockCount-score-display" class="timer-display">回合: 0 | 正确: 0</div>
+            <div id="blockCount-svg-container" class="blockCount-svg-container">
+                <svg id="blockCount-svg" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 320"></svg>
+                 <div id="blockCount-round-countdown" class="countdown-display small hidden"></div>
+            </div>
+            <div id="blockCount-numpad" class="blockCount-numpad hidden">
+                <div id="blockCount-input-display" class="blockCount-input-display"></div>
+                <button data-key="7">7</button><button data-key="8">8</button><button data-key="9">9</button>
+                <button data-key="4">4</button><button data-key="5">5</button><button data-key="6">6</button>
+                <button data-key="1">1</button><button data-key="2">2</button><button data-key="3">3</button>
+                <button data-key="C">C</button><button data-key="0">0</button><button data-key="Del">Del</button>
+            </div>
+            <button id="blockCountStartButton" class="button mt-4">开始方块记忆</button>
+            <div id="blockCount-message" class="message">点击 '开始方块记忆' 按钮</div>
+        </div>
+
     </div>
 
     <script>
@@ -486,14 +591,17 @@
             if (currentActiveMode === 'schulte') schulteStopTimer();
             else if (currentActiveMode === 'memory') { memoryStopTimer(); clearTimeout(memoryRevealTimeout); clearTimeout(memoryNextRoundTimeout); clearInterval(memoryCountdownInterval); document.getElementById('memory-countdown').classList.add('hidden'); const mGA=document.getElementById('memory-grid-container-actual'); mGA.style.transition='none'; mGA.style.transform='translate(0,0)'; }
             else if (currentActiveMode === 'stroop') stroopStopTimer();
-            else if (currentActiveMode === 'nback') { nBackStopTimer(); clearInterval(nBackItemDisplayInterval); }
+            else if (currentActiveMode === 'nback') { nBackStopTimer(); clearTimeout(nBackItemDisplayTimeoutId); } // Changed from clearInterval
             else if (currentActiveMode === 'visualSearch') visualSearchStopTimer();
+            else if (currentActiveMode === 'blockCount') blockCountStopGame();
+
             // Switch UI
             gameModes.forEach(gm => gm.classList.add('hidden')); document.getElementById(`${mode}-mode`).classList.remove('hidden'); currentActiveMode = mode;
             // Init/reset new mode
             if (mode === 'schulte') schulteResetGame(); else if (mode === 'memory') memoryResetGame();
             else if (mode === 'stroop') stroopResetGame(); else if (mode === 'nback') nBackResetGame();
             else if (mode === 'visualSearch') visualSearchResetGame();
+            else if (mode === 'blockCount') blockCountResetGame();
         }
 
         // --- Schulte Grid ---
@@ -507,360 +615,531 @@
 
         // --- Memory Matrix ---
         const memoryGCA=document.getElementById('memory-grid-container-actual'), memoryTD=document.getElementById('memory-timer'), memorySB=document.getElementById('memoryStartButton'), memoryMD=document.getElementById('memory-message'), memoryCD=document.getElementById('memory-countdown'), memoryDS=document.getElementById('memoryDifficultySelect');
-        let memoryHC=[], memoryCC=[], memoryGA=false, memoryAR=false, memoryST, memoryTI, memoryRT, memoryNRT, memoryCI;
+        let memoryHC=[], memoryCC=[], memoryGA=false, memoryAR=false, memoryST, memoryTI, memoryRevealTimeout, memoryNextRoundTimeout, memoryCI; // Renamed memoryRT to memoryRevealTimeout, memoryNRT to memoryNextRoundTimeout
         const MEMORY_GRID_SIZE_CONST = 6; let memoryDiff = memoryDS.value;
-        const MEMORY_DIFFICULTY_SETTINGS = { // min/max RevealDuration (ms), min/max AnimationSpeedFactor, moveProbability (0-1)
+        const MEMORY_DIFFICULTY_SETTINGS = {
             'easy':  {minH:3,maxH:5, minRD:500,maxRD:1300, minASF:0.06, maxASF:0.1, moveP:0.3}, // Slower, longer display, less move
             'medium':{minH:5,maxH:7, minRD:150, maxRD:700, minASF:0.05, maxASF:0.11, moveP:0.4},
-            'hard':  {minH:6,maxH:11, minRD:50, maxRD:400, minASF:0.05, maxASF:0.13, moveP:0.4}  // Faster, shorter, more move
+            'hard':  {minH:6,maxH:11, minRD:50, maxRD:400, minASF:0.05, maxASF:0.13, moveP:0.4}
         };
-        memoryDS.addEventListener('change', ()=>{memoryDiff=memoryDS.value;});
+        memoryDS.addEventListener('change', ()=>{memoryDiff=memoryDS.value; memoryResetGame(); });
         function memoryGenerateGrid(){ memoryGCA.innerHTML=''; memoryGCA.style.gridTemplateColumns=`repeat(${MEMORY_GRID_SIZE_CONST},1fr)`; memoryGCA.style.gridTemplateRows=`repeat(${MEMORY_GRID_SIZE_CONST},1fr)`; const fS='1.2rem'; for(let i=0;i<MEMORY_GRID_SIZE_CONST*MEMORY_GRID_SIZE_CONST;i++){const c=document.createElement('div');c.classList.add('grid-cell','memory-cell');c.dataset.index=i;c.style.fontSize=fS;c.addEventListener('click',memoryHandleCellClick);memoryGCA.appendChild(c);}}
-        function memoryStartGame(){ memoryResetGameFlagsAndTimers(); memoryGA=true; memorySB.disabled=true; memoryDiff=memoryDS.value; let cd=2; memoryCD.textContent=cd; memoryCD.classList.remove('hidden'); memoryMD.textContent='准备...'; memoryCI=setInterval(()=>{cd--; if(cd>0){memoryCD.textContent=cd;}else{clearInterval(memoryCI);memoryCD.classList.add('hidden');memoryRevealPattern();}},1000);}
+        function memoryStartGame(){ memoryResetGameFlagsAndTimers(); memoryGA=true; memorySB.disabled=true; memoryDiff=memoryDS.value; let cd=3; memoryCD.textContent=cd; memoryCD.classList.remove('hidden'); memoryMD.textContent='准备...'; memoryCI=setInterval(()=>{cd--; if(cd>0){memoryCD.textContent=cd;}else{clearInterval(memoryCI);memoryCD.classList.add('hidden');memoryRevealPattern();}},1000);}
         function memoryRevealPattern(){
             const dS=MEMORY_DIFFICULTY_SETTINGS[memoryDiff];
             const moveGrid = Math.random() < dS.moveP;
-            if(moveGrid){
-                dS.minH -= 2;
-                dS.maxH -= 3;
-            }
-            memoryMD.textContent='记住高亮方格...'; const nTH=Math.floor(Math.random()*(dS.maxH-dS.minH+1))+dS.minH;
-            const allCI=Array.from({length:MEMORY_GRID_SIZE_CONST*MEMORY_GRID_SIZE_CONST},(_,i)=>i); shuffleArray(allCI); memoryHC=allCI.slice(0,nTH);
-            Array.from(memoryGCA.children).forEach(c=>c.classList.remove('highlight'));
+            let numToHighlight = Math.floor(Math.random()*(dS.maxH-dS.minH+1))+dS.minH;
+            if(moveGrid && numToHighlight > 4) numToHighlight = Math.max(3, numToHighlight - 2); // Fewer items if moving
+            
+            memoryMD.textContent='记住高亮方格...';
+            const allCI=Array.from({length:MEMORY_GRID_SIZE_CONST*MEMORY_GRID_SIZE_CONST},(_,i)=>i); shuffleArray(allCI); memoryHC=allCI.slice(0,numToHighlight);
+            Array.from(memoryGCA.children).forEach(c=>c.classList.remove('highlight','selected','incorrect')); // Clear previous state
+            
             const rRD=Math.random()*(dS.maxRD-dS.minRD)+dS.minRD; const rASF=Math.random()*(dS.maxASF-dS.minASF)+dS.minASF;
-            const effectiveDuration = moveGrid ? rRD/rASF : rRD; // Duration for movement or static display
+            const effectiveDuration = moveGrid ? Math.max(1500, rRD / rASF) : rRD;
 
             if(moveGrid){
                 memoryGCA.style.transition='none'; const dirs=['horizontal','vertical']; const mT=dirs[Math.floor(Math.random()*dirs.length)]; const pM=Math.random()<0.5; let sT,eT;
-                // Use larger translate values to ensure it moves fully off-screen
                 if(mT==='horizontal'){sT=pM?'translateX(-150%)':'translateX(150%)';eT=pM?'translateX(150%)':'translateX(-150%)';}
                 else{sT=pM?'translateY(-150%)':'translateY(150%)';eT=pM?'translateY(150%)':'translateY(-150%)';}
-                memoryGCA.style.transform=sT; memoryHC.forEach(i=>{memoryGCA.children[i].classList.add('highlight');}); memoryGCA.offsetWidth;
-                memoryGCA.style.transition=`transform ${effectiveDuration/1000}s linear`; memoryGCA.style.transform=eT;
-                memoryRT=setTimeout(()=>{
+                memoryGCA.style.transform=sT; memoryHC.forEach(i=>{memoryGCA.children[i].classList.add('highlight');}); requestAnimationFrame(()=>{ requestAnimationFrame(()=>{ // Double RAF to ensure transform is set before transition
+                    memoryGCA.style.transition=`transform ${effectiveDuration/1000}s linear`; memoryGCA.style.transform=eT;
+                });});
+                memoryRevealTimeout=setTimeout(()=>{
                     memoryGCA.style.transition='none'; memoryGCA.style.transform='translate(0,0)';
-                    // Crucial: Ensure transform is applied before removing highlight to avoid flash
-                    setTimeout(() => {
+                    requestAnimationFrame(()=>{ // Ensure transform reset is rendered
                         memoryHC.forEach(i=>{if(memoryGCA.children[i])memoryGCA.children[i].classList.remove('highlight');});
                         memoryMD.textContent='现在点击您记住的方格！'; memoryAR=true; memoryST=Date.now(); memoryTI=setInterval(memoryUpdateTimerDisplay,10);
-                    }, 0); // Tiny delay to allow render after transform reset
-                },effectiveDuration);
+                    });
+                },effectiveDuration + 50); // Add small buffer for transition to complete
             }else{
                 memoryGCA.style.transform='translate(0,0)'; memoryHC.forEach(i=>{memoryGCA.children[i].classList.add('highlight');});
-                memoryRT=setTimeout(()=>{
+                memoryRevealTimeout=setTimeout(()=>{
                     memoryHC.forEach(i=>{if(memoryGCA.children[i])memoryGCA.children[i].classList.remove('highlight');});
                     memoryMD.textContent='现在点击您记住的方格！'; memoryAR=true; memoryST=Date.now(); memoryTI=setInterval(memoryUpdateTimerDisplay,10);
                 },effectiveDuration);
             }
         }
-        function memoryHandleCellClick(e){if(!memoryGA||!memoryAR)return; const cI=parseInt(e.target.dataset.index); if(memoryCC.includes(cI)||e.target.classList.contains('selected'))return; memoryCC.push(cI); const iC=memoryHC.includes(cI); if(iC){e.target.classList.add('selected');}else{e.target.classList.add('incorrect');setTimeout(()=>e.target.classList.remove('incorrect'),300);} const cS=memoryCC.filter(idx=>memoryHC.includes(idx)).length; if(cS===memoryHC.length&&memoryCC.length===memoryHC.length){memoryStopTimer();memoryAR=false;memoryGA=false; const tT=(Date.now()-memoryST)/1000; memoryMD.textContent=`本轮完成！用时: ${tT.toFixed(2)} 秒. 准备下一轮...`; memoryNRT=setTimeout(memoryStartGame,2000);}else if(memoryCC.length>=memoryHC.length){if(memoryCC.filter(idx=>!memoryHC.includes(idx)).length>0){memoryStopTimer();memoryAR=false;memoryGA=false;memoryMD.textContent=`本轮失败！有错误点击。请点击 '开始记忆训练' 重新开始。`;memorySB.disabled=false;}}}
-        function memoryUpdateTimerDisplay(){if(!memoryST)return;memoryTD.textContent=formatTime(Date.now()-memoryST);}
+        function memoryHandleCellClick(e){if(!memoryGA||!memoryAR)return; const cI=parseInt(e.target.dataset.index); if(memoryCC.includes(cI)||e.target.classList.contains('selected'))return; memoryCC.push(cI); const iC=memoryHC.includes(cI); if(iC){e.target.classList.add('selected');}else{e.target.classList.add('incorrect');setTimeout(()=>e.target.classList.remove('incorrect'),300);} const cS=memoryCC.filter(idx=>memoryHC.includes(idx)).length; if(cS===memoryHC.length&&memoryCC.length===memoryHC.length){memoryStopTimer();memoryAR=false; const tT=(Date.now()-memoryST)/1000; memoryMD.textContent=`本轮完成！用时: ${tT.toFixed(2)} 秒. 准备下一轮...`; memoryNextRoundTimeout=setTimeout(memoryStartGame,2000);}else if(memoryCC.length>=memoryHC.length || (memoryCC.length > 0 && memoryHC.length === 0) ){const incorrectSelections = memoryCC.filter(idx=>!memoryHC.includes(idx)).length; if(incorrectSelections > 0 || (cS < memoryHC.length && memoryCC.length >= memoryHC.length) ){memoryStopTimer();memoryAR=false;memoryMD.textContent=`本轮失败！有错误点击。请点击 '开始记忆训练' 重新开始。`;memorySB.disabled=false; memoryGA=false;}}}
+        function memoryUpdateTimerDisplay(){if(!memoryST || !memoryGA)return;memoryTD.textContent=formatTime(Date.now()-memoryST);}
         function memoryStopTimer(){clearInterval(memoryTI);memoryTI=null;}
-        function memoryResetGameFlagsAndTimers(){memoryStopTimer();clearTimeout(memoryRT);clearTimeout(memoryNRT);clearInterval(memoryCI);memoryCD.classList.add('hidden');memoryAR=false;memoryHC=[];memoryCC=[];memoryTD.textContent='00:00.00';memoryST=null;Array.from(memoryGCA.children).forEach(c=>{c.classList.remove('highlight','selected','incorrect');});memoryGCA.style.transition='none';memoryGCA.style.transform='translate(0,0)';}
+        function memoryResetGameFlagsAndTimers(){memoryStopTimer();clearTimeout(memoryRevealTimeout);clearTimeout(memoryNextRoundTimeout);clearInterval(memoryCI);memoryCD.classList.add('hidden');memoryAR=false;memoryHC=[];memoryCC=[];memoryTD.textContent='00:00.00';memoryST=null;Array.from(memoryGCA.children).forEach(c=>{c.classList.remove('highlight','selected','incorrect');});memoryGCA.style.transition='none';memoryGCA.style.transform='translate(0,0)';}
         function memoryResetGame(){memoryResetGameFlagsAndTimers();memoryGA=false;memorySB.disabled=false;memoryMD.textContent="点击 '开始记忆训练' 按钮";memoryGenerateGrid();}
         memorySB.addEventListener('click',memoryStartGame);
 
         // --- Stroop Effect ---
         const stroopTD=document.getElementById('stroop-timer'), stroopWD=document.getElementById('stroop-word-display'), stroopOC=document.getElementById('stroop-options'), stroopSB=document.getElementById('stroopStartButton'), stroopMD=document.getElementById('stroop-message');
-        const STROOP_WORDS_LIST=['红','蓝','绿','黄'], STROOP_CSS_COLORS_LIST=['red','skyblue','lightgreen','yellow'];
+        const STROOP_WORDS_LIST=['红','蓝','绿','黄'], STROOP_CSS_COLORS_LIST=['red','skyblue','lightgreen','yellow']; // Use CSS friendly colors
         const STROOP_WORD_TO_CSS={'红':'red','蓝':'skyblue','绿':'lightgreen','黄':'yellow'}; const STROOP_CSS_TO_WORD={'red':'红','skyblue':'蓝','lightgreen':'绿','yellow':'黄'};
         let stroopGA=false, stroopST, stroopTI, stroopCurrentWordInkCSS, stroopCorrectC=0, stroopTotalA=0; const STROOP_ROUNDS_CONST=10;
 
         function stroopGenerateButtons(){
             stroopOC.innerHTML='';
-            let buttonTextWords = [...STROOP_WORDS_LIST]; shuffleArray(buttonTextWords); // ['蓝', '红', '黄', '绿']
-            let buttonInkCssColors = [...STROOP_CSS_COLORS_LIST]; shuffleArray(buttonInkCssColors); // ['green', 'yellow', 'red', 'blue']
+            let buttonTextWords = [...STROOP_WORDS_LIST]; shuffleArray(buttonTextWords);
+            let buttonInkCssColors = [...STROOP_CSS_COLORS_LIST]; shuffleArray(buttonInkCssColors);
 
             for(let i=0; i<buttonTextWords.length; i++){
-                const btnWord = buttonTextWords[i]; // e.g., '蓝'
-                let inkCss = buttonInkCssColors[i]; // e.g., 'green'
-                // Ensure button's text meaning is different from its ink color
-                if (STROOP_WORD_TO_CSS[btnWord] === inkCss) { // If '蓝' (blue) is to be written in 'blue' ink
-                    // Swap with the next ink color, wrapping around
+                const btnWord = buttonTextWords[i];
+                let inkCss = buttonInkCssColors[i];
+                if (STROOP_WORD_TO_CSS[btnWord] === inkCss) {
                     inkCss = buttonInkCssColors[(i + 1) % buttonInkCssColors.length];
-                    // This simple swap might still lead to the swapped ink color being the same as the *new* word's meaning
-                    // A more robust solution would be a loop or more complex assignment, but for 4 colors, this is often enough.
-                    // To be absolutely sure, after a swap, re-check:
-                    if (STROOP_WORD_TO_CSS[btnWord] === inkCss) { // If still same after one swap (e.g. all inks were initially aligned with words)
-                        // Find any other ink color that's different
-                        const otherInks = STROOP_CSS_COLORS_LIST.filter(c => c !== inkCss);
-                        if (otherInks.length > 0) inkCss = otherInks[0];
+                     if (STROOP_WORD_TO_CSS[btnWord] === inkCss) { // Still same, pick first non-matching
+                        const otherInks = STROOP_CSS_COLORS_LIST.filter(c => c !== STROOP_WORD_TO_CSS[btnWord]);
+                        if (otherInks.length > 0) inkCss = otherInks[0]; else inkCss = STROOP_CSS_COLORS_LIST[0]; // Fallback
                     }
                 }
                 const button = document.createElement('button'); button.classList.add('stroop-color-button');
-                button.textContent = btnWord; button.dataset.wordText = btnWord; // The text on the button "红"
-                button.style.color = inkCss; // The ink color of the text "红"
+                button.textContent = btnWord; button.dataset.wordText = btnWord;
+                button.style.color = inkCss;
                 button.addEventListener('click', stroopHandleColorClick); stroopOC.appendChild(button);
             }
         }
         function stroopGenerateTest(){
-            const centralWordText = STROOP_WORDS_LIST[Math.floor(Math.random()*STROOP_WORDS_LIST.length)]; // e.g. "绿"
-            let centralWordInkCss = STROOP_CSS_COLORS_LIST[Math.floor(Math.random()*STROOP_CSS_COLORS_LIST.length)]; // e.g. "red"
-            while(STROOP_WORD_TO_CSS[centralWordText] === centralWordInkCss){ // If "绿" (green) is to be in green ink
-                centralWordInkCss = STROOP_CSS_COLORS_LIST[Math.floor(Math.random()*STROOP_CSS_COLORS_LIST.length)];
-            }
-            stroopCurrentWordInkCSS = centralWordInkCss; // This is the color the user must identify, e.g. "red"
-            stroopWD.textContent = centralWordText; // Display "绿"
-            stroopWD.style.color = stroopCurrentWordInkCSS; // In red ink
+            const centralWordText = STROOP_WORDS_LIST[Math.floor(Math.random()*STROOP_WORDS_LIST.length)];
+            let centralWordInkCssList = STROOP_CSS_COLORS_LIST.filter(c => c !== STROOP_WORD_TO_CSS[centralWordText]);
+            if (centralWordInkCssList.length === 0) centralWordInkCssList = STROOP_CSS_COLORS_LIST; // Fallback if all colors match word somehow
+            stroopCurrentWordInkCSS = centralWordInkCssList[Math.floor(Math.random()*centralWordInkCssList.length)];
+            
+            stroopWD.textContent = centralWordText;
+            stroopWD.style.color = stroopCurrentWordInkCSS;
             stroopGenerateButtons();
         }
         function stroopStartGame(){if(stroopGA)return;stroopResetGameFlags();stroopGA=true;stroopSB.disabled=true;stroopMD.textContent='请点击【大字实际墨水颜色】对应的【下方文字按钮】';stroopST=Date.now();stroopTI=setInterval(stroopUpdateTimerDisplay,10);stroopGenerateTest();}
         function stroopHandleColorClick(e){
             if(!stroopGA)return;
-            const clickedButtonWordText = e.target.dataset.wordText; // e.g., User clicked button with text "红"
+            const clickedButtonWordText = e.target.dataset.wordText;
             stroopTotalA++;
-            // Correct choice is the button whose TEXT (e.g. "红") matches the MEANING of the central word's INK (e.g. if ink is 'red', then button with "红")
             const correctButtonWordText = STROOP_CSS_TO_WORD[stroopCurrentWordInkCSS];
 
             if(clickedButtonWordText === correctButtonWordText){ stroopCorrectC++; e.target.classList.add('correct-stroop-feedback'); }
             else{ e.target.classList.add('incorrect-stroop-feedback'); }
-            setTimeout(()=>{ e.target.classList.remove('correct-stroop-feedback','incorrect-stroop-feedback');
+             // Disable all buttons briefly
+            Array.from(stroopOC.children).forEach(btn => btn.disabled = true);
+
+            setTimeout(()=>{
+                e.target.classList.remove('correct-stroop-feedback','incorrect-stroop-feedback');
+                Array.from(stroopOC.children).forEach(btn => btn.disabled = false); // Re-enable buttons
+
                 if(stroopTotalA<STROOP_ROUNDS_CONST){stroopGenerateTest();stroopMD.textContent=`正确: ${stroopCorrectC}/${stroopTotalA}`;}
                 else{stroopStopTimer();const tT=(Date.now()-stroopST)/1000;stroopMD.textContent=`测试完成！正确率: ${((stroopCorrectC/STROOP_ROUNDS_CONST)*100).toFixed(0)}% 用时: ${tT.toFixed(2)} 秒`;stroopGA=false;stroopSB.disabled=false;}
             }, 500);
         }
-        function stroopUpdateTimerDisplay(){stroopTD.textContent=formatTime(Date.now()-stroopST);} function stroopStopTimer(){clearInterval(stroopTI);}
+        function stroopUpdateTimerDisplay(){if(!stroopGA)return; stroopTD.textContent=formatTime(Date.now()-stroopST);} function stroopStopTimer(){clearInterval(stroopTI);}
         function stroopResetGameFlags(){stroopStopTimer();stroopCorrectC=0;stroopTotalA=0;stroopTD.textContent='00:00.00';stroopWD.textContent='';stroopWD.style.color='';}
         function stroopResetGame(){stroopResetGameFlags();stroopGA=false;stroopSB.disabled=false;stroopMD.textContent="点击 '开始斯特鲁普' 按钮...";stroopGenerateButtons();}
         stroopSB.addEventListener('click',stroopStartGame);
 
-
-
         // --- N-Back Task ---
-        const nBackTimerDisplay = document.getElementById('nback-timer');
-        const nBackDisplayItem = document.getElementById('nback-display-item');
-        const nBackMatchButton = document.getElementById('nbackMatchButton');
-        const nBackNoMatchButton = document.getElementById('nbackNoMatchButton');
-        const nBackStartButton = document.getElementById('nbackStartButton');
-        const nBackMessageDisplay = document.getElementById('nback-message');
-        const nBackNValueSelect = document.getElementById('nbackNValueSelect');
-        const nBackRoundsSelect = document.getElementById('nbackRoundsSelect');
-        const nBackDifficultySelect = document.getElementById('nbackDifficultySelect');
-
-        let nBackNValue = parseInt(nBackNValueSelect.value);
-        let nBackRounds = parseInt(nBackRoundsSelect.value);
-        let nBackSequence = [];
-        let nBackCurrentRound = 0;
-        let nBackGameActive = false;
-        let nBackAwaitingResponse = false;
-        let nBackStartTime;
-        let nBackTimerInterval;
-        let nBackItemDisplayTimeoutId; // Changed from nBackItemDisplayInterval to reflect setTimeout
-        let nBackCorrectCount = 0;
-        let nBackDifficulty = nBackDifficultySelect.value;
-
+        const nBackTimerDisplay = document.getElementById('nback-timer'); const nBackDisplayItem = document.getElementById('nback-display-item'); const nBackMatchButton = document.getElementById('nbackMatchButton'); const nBackNoMatchButton = document.getElementById('nbackNoMatchButton'); const nBackStartButton = document.getElementById('nbackStartButton'); const nBackMessageDisplay = document.getElementById('nback-message'); const nBackNValueSelect = document.getElementById('nbackNValueSelect'); const nBackRoundsSelect = document.getElementById('nbackRoundsSelect'); const nBackDifficultySelect = document.getElementById('nbackDifficultySelect');
+        let nBackNValue = parseInt(nBackNValueSelect.value); let nBackRounds = parseInt(nBackRoundsSelect.value); let nBackSequence = []; let nBackCurrentRound = 0; let nBackGameActive = false; let nBackAwaitingResponse = false; let nBackStartTime; let nBackTimerInterval; let nBackItemDisplayTimeoutId; let nBackCorrectCount = 0; let nBackDifficulty = nBackDifficultySelect.value;
         const NBACK_ITEMS_LIST = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ'.split('');
-        const NBACK_DIFFICULTY_SETTINGS_OBJ = {
-            'easy':   { minDisplayInterval: 2200, maxDisplayInterval: 3000, targetMatchProbability: 0.35 },
-            'medium': { minDisplayInterval: 1400, maxDisplayInterval: 2200, targetMatchProbability: 0.35 },
-            'hard':   { minDisplayInterval: 700, maxDisplayInterval: 1400, targetMatchProbability: 0.3 }
-        };
-        const NBACK_TARGET_MATCH_PROBABILITY_DEFAULT = 0.35;
-        const NBACK_FLASH_DURATION = 100; // ms for the flash/blank display
-
-        nBackNValueSelect.addEventListener('change', () => { nBackNValue = parseInt(nBackNValueSelect.value); nBackResetGame(); });
-        nBackRoundsSelect.addEventListener('change', () => { nBackRounds = parseInt(nBackRoundsSelect.value); nBackResetGame(); });
-        nBackDifficultySelect.addEventListener('change', () => { nBackDifficulty = nBackDifficultySelect.value; nBackResetGame(); });
-
-        function nBackGenerateRandomItem(excludeItem = null) {
-            let item;
-            let attempts = 0;
-            do {
-                item = NBACK_ITEMS_LIST[Math.floor(Math.random() * NBACK_ITEMS_LIST.length)];
-                attempts++;
-            } while (excludeItem && item === excludeItem && attempts < NBACK_ITEMS_LIST.length * 2);
-            return item;
-        }
-
-        function nBackScheduleNextItem() {
-            if (!nBackGameActive) return; // Don't schedule if game is not active
-
-            const settings = NBACK_DIFFICULTY_SETTINGS_OBJ[nBackDifficulty] || NBACK_DIFFICULTY_SETTINGS_OBJ['medium'];
-            const randomInterval = Math.random() * (settings.maxDisplayInterval - settings.minDisplayInterval) + settings.minDisplayInterval;
-            
-            if (nBackItemDisplayTimeoutId) clearTimeout(nBackItemDisplayTimeoutId);
-
-            nBackItemDisplayTimeoutId = setTimeout(() => {
-                if (nBackGameActive) {
-                    nBackDisplayNextItem();
-                }
-            }, randomInterval);
-        }
-
-
-        function nBackStartGame() {
-            if (nBackGameActive) return;
-            nBackResetGameFlags();
-            nBackGameActive = true;
-            nBackStartButton.disabled = true;
-            nBackMatchButton.disabled = false;
-            nBackNoMatchButton.disabled = false;
-            nBackMessageDisplay.textContent = '游戏进行中...';
-            nBackStartTime = Date.now();
-            nBackTimerInterval = setInterval(nBackUpdateTimerDisplay, 10);
-            
-            nBackDisplayNextItem(); // Display first item immediately
-        }
-
+        const NBACK_DIFFICULTY_SETTINGS_OBJ = { 'easy':   { minDisplayInterval: 2200, maxDisplayInterval: 3000, targetMatchProbability: 0.35 }, 'medium': { minDisplayInterval: 1400, maxDisplayInterval: 2200, targetMatchProbability: 0.35 }, 'hard':   { minDisplayInterval: 700, maxDisplayInterval: 1400, targetMatchProbability: 0.3 } };
+        const NBACK_TARGET_MATCH_PROBABILITY_DEFAULT = 0.35; const NBACK_FLASH_DURATION = 100; 
+        nBackNValueSelect.addEventListener('change', () => { nBackNValue = parseInt(nBackNValueSelect.value); nBackResetGame(); }); nBackRoundsSelect.addEventListener('change', () => { nBackRounds = parseInt(nBackRoundsSelect.value); nBackResetGame(); }); nBackDifficultySelect.addEventListener('change', () => { nBackDifficulty = nBackDifficultySelect.value; nBackResetGame(); });
+        function nBackGenerateRandomItem(excludeItem = null) { let item; let attempts = 0; do { item = NBACK_ITEMS_LIST[Math.floor(Math.random() * NBACK_ITEMS_LIST.length)]; attempts++; } while (excludeItem && item === excludeItem && attempts < NBACK_ITEMS_LIST.length * 2); return item; }
+        function nBackScheduleNextItem() { if (!nBackGameActive) return; const settings = NBACK_DIFFICULTY_SETTINGS_OBJ[nBackDifficulty] || NBACK_DIFFICULTY_SETTINGS_OBJ['medium']; const randomInterval = Math.random() * (settings.maxDisplayInterval - settings.minDisplayInterval) + settings.minDisplayInterval; if (nBackItemDisplayTimeoutId) clearTimeout(nBackItemDisplayTimeoutId); nBackItemDisplayTimeoutId = setTimeout(() => { if (nBackGameActive) { nBackDisplayNextItem(); } }, randomInterval); }
+        function nBackStartGame() { if (nBackGameActive) return; nBackResetGameFlags(); nBackGameActive = true; nBackStartButton.disabled = true; nBackMatchButton.disabled = false; nBackNoMatchButton.disabled = false; nBackMessageDisplay.textContent = '游戏进行中...'; nBackStartTime = Date.now(); nBackTimerInterval = setInterval(nBackUpdateTimerDisplay, 10); nBackDisplayNextItem(); }
         function nBackDisplayNextItem() {
-            // Check if game ended or rounds completed before proceeding
-            if (!nBackGameActive || (nBackCurrentRound >= nBackRounds && nBackRounds > 0) ) { // nBackRounds > 0 ensures it handles initial call if rounds is 0
-                if (nBackGameActive && nBackCurrentRound >= nBackRounds) { // If rounds complete and game was active
-                     nBackEndGame();
-                }
-                return;
-            }
-
-            nBackDisplayItem.textContent = ''; // Flash: Clear the display
-
+            if (!nBackGameActive || (nBackCurrentRound >= nBackRounds && nBackRounds > 0) ) { if (nBackGameActive && nBackCurrentRound >= nBackRounds) { nBackEndGame(); } return; }
+            nBackDisplayItem.textContent = ''; 
             setTimeout(() => {
-                if (!nBackGameActive) return; // Re-check after flash delay
-
-                nBackAwaitingResponse = false;
-
-                let newItem;
-                const settings = NBACK_DIFFICULTY_SETTINGS_OBJ[nBackDifficulty] || NBACK_DIFFICULTY_SETTINGS_OBJ['medium'];
-                const targetMatchProb = settings.targetMatchProbability || NBACK_TARGET_MATCH_PROBABILITY_DEFAULT;
-
-                if (nBackCurrentRound >= nBackNValue && Math.random() < targetMatchProb) {
-                    newItem = nBackSequence[nBackCurrentRound - nBackNValue];
-                } else {
-                    let potentialNBackItem = null;
-                    if (nBackCurrentRound >= nBackNValue) {
-                        potentialNBackItem = nBackSequence[nBackCurrentRound - nBackNValue];
-                    }
-                    newItem = nBackGenerateRandomItem(potentialNBackItem);
-                }
-
-                nBackSequence.push(newItem);
-                nBackDisplayItem.textContent = newItem;
-                nBackCurrentRound++;
-
-                nBackMatchButton.classList.remove('correct', 'incorrect');
-                nBackNoMatchButton.classList.remove('correct', 'incorrect');
-
-                if (nBackCurrentRound > nBackNValue) {
-                    nBackAwaitingResponse = true;
-                    nBackMessageDisplay.textContent = `第 ${nBackCurrentRound} 轮 (判断)`;
-                } else {
-                    nBackMessageDisplay.textContent = `第 ${nBackCurrentRound} 轮 (观察)`;
-                }
-                
-                // Schedule next item or end game
-                if (nBackGameActive) { // Check again, state might have changed
-                    if (nBackCurrentRound <= nBackRounds) {
-                        nBackScheduleNextItem();
-                    } else { // All rounds completed
-                        nBackEndGame();
-                    }
-                }
+                if (!nBackGameActive) return; 
+                nBackAwaitingResponse = false; let newItem; const settings = NBACK_DIFFICULTY_SETTINGS_OBJ[nBackDifficulty] || NBACK_DIFFICULTY_SETTINGS_OBJ['medium']; const targetMatchProb = settings.targetMatchProbability || NBACK_TARGET_MATCH_PROBABILITY_DEFAULT;
+                if (nBackCurrentRound >= nBackNValue && Math.random() < targetMatchProb) { newItem = nBackSequence[nBackCurrentRound - nBackNValue]; } else { let potentialNBackItem = null; if (nBackCurrentRound >= nBackNValue) { potentialNBackItem = nBackSequence[nBackCurrentRound - nBackNValue]; } newItem = nBackGenerateRandomItem(potentialNBackItem); }
+                nBackSequence.push(newItem); nBackDisplayItem.textContent = newItem; nBackCurrentRound++;
+                nBackMatchButton.classList.remove('correct', 'incorrect'); nBackNoMatchButton.classList.remove('correct', 'incorrect');
+                if (nBackCurrentRound > nBackNValue) { nBackAwaitingResponse = true; nBackMessageDisplay.textContent = `第 ${nBackCurrentRound} 轮 (判断)`; } else { nBackMessageDisplay.textContent = `第 ${nBackCurrentRound} 轮 (观察)`; }
+                if (nBackGameActive) { if (nBackCurrentRound <= nBackRounds) { nBackScheduleNextItem(); } else { nBackEndGame(); } }
             }, NBACK_FLASH_DURATION);
         }
-
         function nBackHandleButtonClick(userPressedMatch) {
-            if (!nBackGameActive || !nBackAwaitingResponse || nBackCurrentRound <= nBackNValue) {
-                return;
-            }
-
-            const currentItem = nBackSequence[nBackCurrentRound - 1];
-            const nBackComparisonItem = nBackSequence[nBackCurrentRound - 1 - nBackNValue];
-            const actualMatch = (currentItem === nBackComparisonItem);
-
-            if (userPressedMatch === actualMatch) {
-                nBackCorrectCount++;
-                (userPressedMatch ? nBackMatchButton : nBackNoMatchButton).classList.add('correct');
-            } else {
-                (userPressedMatch ? nBackMatchButton : nBackNoMatchButton).classList.add('incorrect');
-            }
-            nBackAwaitingResponse = false;
+            if (!nBackGameActive || !nBackAwaitingResponse || nBackCurrentRound <= nBackNValue) { return; }
+            const currentItem = nBackSequence[nBackCurrentRound - 1]; const nBackComparisonItem = nBackSequence[nBackCurrentRound - 1 - nBackNValue]; const actualMatch = (currentItem === nBackComparisonItem);
+            if (userPressedMatch === actualMatch) { nBackCorrectCount++; (userPressedMatch ? nBackMatchButton : nBackNoMatchButton).classList.add('correct'); } else { (userPressedMatch ? nBackMatchButton : nBackNoMatchButton).classList.add('incorrect'); }
+            nBackAwaitingResponse = false; // Response registered
+            // To prevent multiple clicks for the same item, can disable buttons here until next item
+            // nBackMatchButton.disabled = true; nBackNoMatchButton.disabled = true; 
+            // Then re-enable them in nBackDisplayNextItem or nBackScheduleNextItem
         }
-
         function nBackEndGame() {
-            nBackGameActive = false; // Set game to inactive *first*
-            if (nBackItemDisplayTimeoutId) {
-                clearTimeout(nBackItemDisplayTimeoutId);
-                nBackItemDisplayTimeoutId = null;
-            }
-            nBackStopTimer();
-
-            nBackStartButton.disabled = false;
-            nBackMatchButton.disabled = true;
-            nBackNoMatchButton.disabled = true;
-            nBackAwaitingResponse = false;
-
-            const totalTime = (nBackStartTime ? (Date.now() - nBackStartTime) : 0) / 1000;
-            const evaluableRounds = Math.max(0, nBackRounds - nBackNValue);
-            const accuracy = evaluableRounds > 0 ? (nBackCorrectCount / evaluableRounds) * 100 : 0;
-            // Ensure nBackMessageDisplay is updated only once at the very end
-            if (nBackMessageDisplay.textContent.startsWith("N-Back 完成！")) return; // Avoid multiple end messages if called again
+            nBackGameActive = false; if (nBackItemDisplayTimeoutId) { clearTimeout(nBackItemDisplayTimeoutId); nBackItemDisplayTimeoutId = null; } nBackStopTimer();
+            nBackStartButton.disabled = false; nBackMatchButton.disabled = true; nBackNoMatchButton.disabled = true; nBackAwaitingResponse = false;
+            const totalTime = (nBackStartTime ? (Date.now() - nBackStartTime) : 0) / 1000; const evaluableRounds = Math.max(0, nBackRounds - nBackNValue); const accuracy = evaluableRounds > 0 ? (nBackCorrectCount / evaluableRounds) * 100 : 0;
+            if (nBackMessageDisplay.textContent.startsWith("N-Back 完成！")) return; 
             nBackMessageDisplay.textContent = `N-Back 完成！正确率: ${accuracy.toFixed(0)}% (${nBackCorrectCount}/${evaluableRounds}) 用时: ${totalTime.toFixed(2)} 秒`;
         }
-
-        function nBackUpdateTimerDisplay() {
-            if (!nBackStartTime || !nBackGameActive) return;
-            const elapsedTime = Date.now() - nBackStartTime;
-            nBackTimerDisplay.textContent = formatTime(elapsedTime);
-        }
-        function nBackStopTimer() {
-            if (nBackTimerInterval) {
-                clearInterval(nBackTimerInterval);
-                nBackTimerInterval = null;
-            }
-        }
-
-        function nBackResetGameFlags() {
-            nBackStopTimer();
-            if (nBackItemDisplayTimeoutId) {
-                clearTimeout(nBackItemDisplayTimeoutId);
-                nBackItemDisplayTimeoutId = null;
-            }
-
-            nBackSequence = [];
-            nBackCurrentRound = 0;
-            nBackCorrectCount = 0;
-            nBackTimerDisplay.textContent = '00:00.00';
-            nBackDisplayItem.textContent = '';
-            nBackMatchButton.classList.remove('correct', 'incorrect');
-            nBackNoMatchButton.classList.remove('correct', 'incorrect');
-            nBackStartTime = null;
-        }
-
-        function nBackResetGame() {
-            nBackResetGameFlags(); // Resets timers and game variables
-            nBackGameActive = false; // Ensure game is marked as inactive
-            nBackAwaitingResponse = false;
-            nBackStartButton.disabled = false;
-            nBackMatchButton.disabled = true;
-            nBackNoMatchButton.disabled = true;
-            const selectedNText = nBackNValueSelect.options[nBackNValueSelect.selectedIndex].text;
-            nBackMessageDisplay.textContent = `点击 '开始 N-Back' (${selectedNText})...`;
-        }
-        // Event listeners are outside this partial snippet
-        nBackStartButton.addEventListener('click',nBackStartGame);
-        nBackMatchButton.addEventListener('click',()=>nBackHandleButtonClick(true));
-        nBackNoMatchButton.addEventListener('click',()=>nBackHandleButtonClick(false));
-
-
-
-
+        function nBackUpdateTimerDisplay() { if (!nBackStartTime || !nBackGameActive) return; const elapsedTime = Date.now() - nBackStartTime; nBackTimerDisplay.textContent = formatTime(elapsedTime); }
+        function nBackStopTimer() { if (nBackTimerInterval) { clearInterval(nBackTimerInterval); nBackTimerInterval = null; } }
+        function nBackResetGameFlags() { nBackStopTimer(); if (nBackItemDisplayTimeoutId) { clearTimeout(nBackItemDisplayTimeoutId); nBackItemDisplayTimeoutId = null; } nBackSequence = []; nBackCurrentRound = 0; nBackCorrectCount = 0; nBackTimerDisplay.textContent = '00:00.00'; nBackDisplayItem.textContent = ''; nBackMatchButton.classList.remove('correct', 'incorrect'); nBackNoMatchButton.classList.remove('correct', 'incorrect'); nBackStartTime = null; }
+        function nBackResetGame() { nBackResetGameFlags(); nBackGameActive = false; nBackAwaitingResponse = false; nBackStartButton.disabled = false; nBackMatchButton.disabled = true; nBackNoMatchButton.disabled = true; const selectedNText = nBackNValueSelect.options[nBackNValueSelect.selectedIndex].text; nBackMessageDisplay.textContent = `点击 '开始 N-Back' (${selectedNText})...`; }
+        nBackStartButton.addEventListener('click',nBackStartGame); nBackMatchButton.addEventListener('click',()=>nBackHandleButtonClick(true)); nBackNoMatchButton.addEventListener('click',()=>nBackHandleButtonClick(false));
 
         // --- Visual Search ---
         const vsTD=document.getElementById('visualSearch-timer'),vsTaD=document.getElementById('visualSearch-target-display'),vsGC=document.getElementById('visualSearch-grid-container'),vsSB=document.getElementById('visualSearchStartButton'),vsMD=document.getElementById('visualSearch-message'),vsDS=document.getElementById('visualSearchDifficultySelect');
         let vsGA=false,vsST,vsTI,vsTC='',vsTIdxs=[],vsFC=0,vsIC=0,vsDiff=vsDS.value;
         const VS_ALPHA='ABCDEFGHIJKLMNOPQRSTUVWXYZ'; const VS_SIMILAR={'E':['F','L','T','I'],'O':['C','G','Q','D'],'B':['P','R'],'A':['H','M','N'],'V':['U','W','Y'],'K':['X'],'S':['Z','5'],'I':['L','T','J'],'P':['R','B','F']};
-        const VS_DIFF_SETTINGS={'easy':{gridSize:6,minT:3,maxT:5,dT:'random'},'medium':{gridSize:8,minT:6,maxT:9,dT:'random'},'hard':{gridSize:8,minT:8,maxT:12,dT:'similar'}}; // Hard gridSize 8x8
+        const VS_DIFF_SETTINGS={'easy':{gridSize:6,minT:3,maxT:5,dT:'random'},'medium':{gridSize:8,minT:6,maxT:9,dT:'random'},'hard':{gridSize:8,minT:8,maxT:12,dT:'similar'}};
         vsDS.addEventListener('change',()=>{vsDiff=vsDS.value;vsResetGame();});
         function vsGenerateGrid(){vsGC.innerHTML='';const s=VS_DIFF_SETTINGS[vsDiff];const cGS=s.gridSize;const totC=cGS*cGS;vsGC.style.gridTemplateColumns=`repeat(${cGS},1fr)`;vsGC.style.gridTemplateRows=`repeat(${cGS},1fr)`;const ceFS=Math.max(0.8,2-(cGS-5)*0.2);vsTC=VS_ALPHA[Math.floor(Math.random()*VS_ALPHA.length)];vsTaD.textContent=`目标: ${vsTC}`;const chars=[];vsTIdxs=[];const nT=Math.floor(Math.random()*(s.maxT-s.minT+1))+s.minT;const allIdx=Array.from({length:totC},(_,i)=>i);shuffleArray(allIdx);const tPos=allIdx.slice(0,nT);for(let i=0;i<totC;i++){let ch;if(tPos.includes(i)){ch=vsTC;vsTIdxs.push(i);}else{if(s.dT==='similar'&&VS_SIMILAR[vsTC]){const sim=VS_SIMILAR[vsTC];ch=sim[Math.floor(Math.random()*sim.length)];}else{do{ch=VS_ALPHA[Math.floor(Math.random()*VS_ALPHA.length)];}while(ch===vsTC);}}chars.push(ch);}chars.forEach((ch,idx)=>{const cell=document.createElement('div');cell.classList.add('grid-cell','visual-search-cell');cell.style.fontSize=`${ceFS}rem`;cell.textContent=ch;cell.dataset.index=idx;cell.dataset.char=ch;cell.addEventListener('click',vsHandleCellClick);vsGC.appendChild(cell);});}
         function vsStartGame(){if(vsGA)return;vsResetGameFlags();vsGA=true;vsSB.disabled=true;vsMD.textContent='找到所有目标字符！';vsST=Date.now();vsTI=setInterval(vsUpdateTimerDisplay,10);vsGenerateGrid();}
         function vsHandleCellClick(e){if(!vsGA)return;const clC=e.target;const clCh=clC.dataset.char;if(clC.classList.contains('found'))return;if(clCh===vsTC){clC.classList.add('found');vsFC++;vsMD.textContent=`找到 ${vsFC}/${vsTIdxs.length} | 错误点击: ${vsIC}`;if(vsFC===vsTIdxs.length){vsEndGame(true);}}else{vsIC++;clC.classList.add('incorrect-click');setTimeout(()=>clC.classList.remove('incorrect-click'),300);vsMD.textContent=`找到 ${vsFC}/${vsTIdxs.length} | 错误点击: ${vsIC}`;}}
         function vsEndGame(comp){vsStopTimer();vsGA=false;vsSB.disabled=false;const tT=(Date.now()-vsST)/1000;let errR=0;const totI=vsFC+vsIC;if(totI>0){errR=(vsIC/totI)*100;}if(comp){vsMD.textContent=`恭喜！找到所有 ${vsTIdxs.length} 个目标！用时: ${tT.toFixed(2)} 秒. 错误点击: ${vsIC}. 错误率: ${errR.toFixed(1)}%`;}else{Array.from(vsGC.children).forEach(c=>{if(vsTIdxs.includes(parseInt(c.dataset.index))&&!c.classList.contains('found')){c.classList.add('missed');}});vsMD.textContent=`游戏结束. 找到 ${vsFC}/${vsTIdxs.length}. 用时: ${tT.toFixed(2)} 秒. 错误点击: ${vsIC}. 错误率: ${errR.toFixed(1)}%`;}}
-        function vsUpdateTimerDisplay(){vsTD.textContent=formatTime(Date.now()-vsST);} function vsStopTimer(){clearInterval(vsTI);}
+        function vsUpdateTimerDisplay(){if (!vsGA) return; vsTD.textContent=formatTime(Date.now()-vsST);} function vsStopTimer(){clearInterval(vsTI);}
         function vsResetGameFlags(){vsStopTimer();vsTC='';vsTIdxs=[];vsFC=0;vsIC=0;vsTD.textContent='00:00.00';}
-        function vsResetGame(){vsResetGameFlags();vsGA=false;vsSB.disabled=false;vsTaD.textContent='目标: ?';vsMD.textContent="点击 '开始视觉搜索' 按钮...";vsGC.innerHTML='';vsGenerateGrid();}
+        function vsResetGame(){vsResetGameFlags();vsGA=false;vsSB.disabled=false;vsTaD.textContent='目标: ?';vsMD.textContent="点击 '开始视觉搜索' 按钮...";vsGC.innerHTML='';vsGenerateGrid();} // Generate grid on reset to show something
         vsSB.addEventListener('click',vsStartGame);
 
+
+
+        // --- Block Count (New Mode) ---
+        const bcSVGContainer = document.getElementById('blockCount-svg-container');
+        const bcSVG = document.getElementById('blockCount-svg'); // The main SVG element
+        // We'll create a group for the blocks dynamically
+        let bcSVGGroup; // Will hold the <g> element for blocks
+
+        const bcNumpad = document.getElementById('blockCount-numpad');
+        const bcInputDisplay = document.getElementById('blockCount-input-display');
+        const bcStartButton = document.getElementById('blockCountStartButton');
+        const bcScoreDisplay = document.getElementById('blockCount-score-display');
+        const bcMessage = document.getElementById('blockCount-message');
+        const bcDifficultySelect = document.getElementById('blockCountDifficultySelect');
+        const bcRoundCountdownDisplay = document.getElementById('blockCount-round-countdown');
+
+        const SVG_NS = "http://www.w3.org/2000/svg";
+        const BC_GRID_COLS = 5;
+        const BC_GRID_ROWS = 5;
+        const BC_MAX_STACK_HEIGHT = 3;
+
+        const BC_UNIT_SIZE = 20; 
+        const BC_PERSPECTIVE_X_FACTOR = 0.866; 
+        const BC_PERSPECTIVE_Y_FACTOR = 0.5;   
+        const BC_BLOCK_DRAW_HEIGHT = BC_UNIT_SIZE * 0.8; 
+        const BC_STROKE_COLOR = '#1a202c';
+        const BC_STROKE_WIDTH = 1;
+
+        const BC_COLOR_TOP = '#cccccc';
+        const BC_COLOR_LEFT = '#aaaaaa'; 
+        const BC_COLOR_RIGHT = '#888888';
+
+        const BC_DIFFICULTY_SETTINGS = {
+            'easy':   { minBlocks: 3,  maxBlocks: 10,  staticRevealMin: 1000, staticRevealMax: 2000, moveRevealMin: 3500, moveRevealMax: 4800, moveP: 0.25 },
+            'medium': { minBlocks: 6,  maxBlocks: 20, staticRevealMin: 250, staticRevealMax: 1300, moveRevealMin: 2200, moveRevealMax: 4000, moveP: 0.4 },
+            'hard':   { minBlocks: 8, maxBlocks: 20, staticRevealMin: 50, staticRevealMax: 700, moveRevealMin: 500, moveRevealMax: 1800, moveP: 0.4 }
+        };
+
+        let bcGameActive = false;
+        let bcCurrentBlocks = []; 
+        let bcActualBlockCount = 0;
+        let bcUserInput = "";
+        let bcCurrentRound = 0;
+        let bcCorrectAnswers = 0;
+        let bcDifficulty = bcDifficultySelect.value;
+        let bcRevealTimeoutId;
+        let bcNextRoundCountdownIntervalId;
+        let bcNextRoundTimeoutId;
+
+        bcDifficultySelect.addEventListener('change', () => {
+            bcDifficulty = bcDifficultySelect.value;
+            blockCountResetGame(); 
+        });
+
+        function blockCountGenerateBlocks() {
+            // ... (this function remains the same)
+            bcCurrentBlocks = [];
+            const settings = BC_DIFFICULTY_SETTINGS[bcDifficulty];
+            const targetBlockCount = Math.floor(Math.random() * (settings.maxBlocks - settings.minBlocks + 1)) + settings.minBlocks;
+            
+            let placedBlockCount = 0;
+            const stackHeights = Array(BC_GRID_COLS).fill(null).map(() => Array(BC_GRID_ROWS).fill(0));
+            
+            const availableBasePositions = [];
+            for(let r=0; r<BC_GRID_ROWS; r++) {
+                for(let c=0; c<BC_GRID_COLS; c++) {
+                    availableBasePositions.push({c,r});
+                }
+            }
+            shuffleArray(availableBasePositions);
+
+            let attempt = 0;
+            while(placedBlockCount < targetBlockCount && attempt < availableBasePositions.length * BC_MAX_STACK_HEIGHT * 2) { 
+                const basePos = availableBasePositions[attempt % availableBasePositions.length];
+                const c = basePos.c;
+                const r = basePos.r;
+
+                if (stackHeights[c][r] < BC_MAX_STACK_HEIGHT) {
+                    const h = stackHeights[c][r];
+                    bcCurrentBlocks.push({ c, r, h });
+                    stackHeights[c][r]++;
+                    placedBlockCount++;
+                }
+                attempt++;
+            }
+            bcActualBlockCount = bcCurrentBlocks.length;
+        }
+        
+        function blockCountDrawBlocksToSVG() {
+            // Ensure bcSVGGroup exists and is empty
+            if (bcSVGGroup) {
+                bcSVGGroup.innerHTML = ''; // Clear previous blocks from the group
+            } else {
+                bcSVGGroup = document.createElementNS(SVG_NS, 'g');
+                bcSVGGroup.setAttribute('id', 'blockCount-svg-group'); // For potential CSS styling/selection
+                bcSVG.appendChild(bcSVGGroup);
+            }
+            // Reset group's transform before drawing and animating
+            bcSVGGroup.style.transition = 'none';
+            bcSVGGroup.style.transform = 'translate(0px, 0px)'; // SVG transform needs units
+            bcSVGGroup.style.transformOrigin = 'center center'; // Ensure scaling/rotation is centered if ever added
+
+            const viewBox = bcSVG.viewBox.baseVal;
+            const originX = viewBox.width / 2;
+            const maxGridHeightVisual = BC_GRID_ROWS * BC_PERSPECTIVE_Y_FACTOR * BC_UNIT_SIZE + BC_MAX_STACK_HEIGHT * BC_BLOCK_DRAW_HEIGHT;
+            const originY = (viewBox.height - maxGridHeightVisual) / 2 + (BC_GRID_ROWS * BC_PERSPECTIVE_Y_FACTOR * BC_UNIT_SIZE);
+
+            const sortedBlocks = [...bcCurrentBlocks].sort((a, b) => {
+                if (a.r !== b.r) return b.r - a.r; 
+                if (a.c !== b.c) return b.c - a.c; 
+                return a.h - b.h;       
+            });
+
+            sortedBlocks.forEach(block => {
+                const { c, r, h } = block;
+                const baseX = originX + (c - r) * BC_PERSPECTIVE_X_FACTOR * BC_UNIT_SIZE;
+                const baseY = originY + (c + r) * BC_PERSPECTIVE_Y_FACTOR * BC_UNIT_SIZE - h * BC_BLOCK_DRAW_HEIGHT;
+                const points = [
+                    { x: baseX, y: baseY }, 
+                    { x: baseX + BC_PERSPECTIVE_X_FACTOR * BC_UNIT_SIZE, y: baseY + BC_PERSPECTIVE_Y_FACTOR * BC_UNIT_SIZE }, 
+                    { x: baseX, y: baseY + 2 * BC_PERSPECTIVE_Y_FACTOR * BC_UNIT_SIZE }, 
+                    { x: baseX - BC_PERSPECTIVE_X_FACTOR * BC_UNIT_SIZE, y: baseY + BC_PERSPECTIVE_Y_FACTOR * BC_UNIT_SIZE }, 
+                ];
+                const topPoints = points.map(p => ({ x: p.x, y: p.y - BC_BLOCK_DRAW_HEIGHT }));
+
+                const topFace = document.createElementNS(SVG_NS, 'polygon');
+                topFace.setAttribute('points', `${topPoints[3].x},${topPoints[3].y} ${topPoints[0].x},${topPoints[0].y} ${topPoints[1].x},${topPoints[1].y} ${topPoints[2].x},${topPoints[2].y}`);
+                topFace.setAttribute('fill', BC_COLOR_TOP);
+                topFace.setAttribute('stroke', BC_STROKE_COLOR); topFace.setAttribute('stroke-width', BC_STROKE_WIDTH);
+                bcSVGGroup.appendChild(topFace); // Append to group
+
+                const leftFace = document.createElementNS(SVG_NS, 'polygon');
+                leftFace.setAttribute('points', `${points[3].x},${points[3].y} ${points[2].x},${points[2].y} ${topPoints[2].x},${topPoints[2].y} ${topPoints[3].x},${topPoints[3].y}`);
+                leftFace.setAttribute('fill', BC_COLOR_LEFT);
+                leftFace.setAttribute('stroke', BC_STROKE_COLOR); leftFace.setAttribute('stroke-width', BC_STROKE_WIDTH);
+                bcSVGGroup.appendChild(leftFace); // Append to group
+
+                const rightFace = document.createElementNS(SVG_NS, 'polygon');
+                rightFace.setAttribute('points', `${points[2].x},${points[2].y} ${points[1].x},${points[1].y} ${topPoints[1].x},${topPoints[1].y} ${topPoints[2].x},${topPoints[2].y}`);
+                rightFace.setAttribute('fill', BC_COLOR_RIGHT);
+                rightFace.setAttribute('stroke', BC_STROKE_COLOR); rightFace.setAttribute('stroke-width', BC_STROKE_WIDTH);
+                bcSVGGroup.appendChild(rightFace); // Append to group
+            });
+             bcSVGGroup.offsetHeight; // Force reflow
+        }
+
+        function blockCountUpdateScoreDisplay() {
+            // ... (this function remains the same)
+            bcScoreDisplay.textContent = `回合: ${bcCurrentRound} | 正确: ${bcCorrectAnswers}`;
+        }
+
+        function blockCountStartGame() {
+            // ... (this function remains the same)
+            if (bcGameActive) return;
+            bcGameActive = true;
+            bcStartButton.disabled = true;
+            bcCurrentRound = 0;
+            bcCorrectAnswers = 0;
+            blockCountUpdateScoreDisplay();
+            blockCountNextRound();
+        }
+
+        function blockCountNextRound() {
+            bcCurrentRound++;
+            blockCountUpdateScoreDisplay();
+            bcMessage.textContent = "记住方块数量...";
+            bcNumpad.classList.add('hidden');
+            bcInputDisplay.textContent = '';
+            bcUserInput = '';
+            bcRoundCountdownDisplay.classList.add('hidden');
+            
+            bcSVGContainer.classList.remove('hidden'); 
+            // bcSVG.innerHTML = ''; // Clearing the group is now handled in drawBlocksToSVG
+
+            blockCountGenerateBlocks(); // Generates block data
+            blockCountDrawBlocksToSVG(); // Draws blocks into bcSVGGroup, which resets its transform
+
+            const settings = BC_DIFFICULTY_SETTINGS[bcDifficulty];
+            const moveBlocks = Math.random() < settings.moveP;
+            let currentRevealTime;
+            const containerWidth = bcSVGContainer.offsetWidth;
+            const containerHeight = bcSVGContainer.offsetHeight;
+
+            if (moveBlocks) {
+                bcMessage.textContent = "记住移动中的方块数量...";
+
+                settings.minBlocks -= 2;
+                if(settings.maxBlocks > 10){
+                    settings.minBlocks -= 1;
+                    settings.maxBlocks -= 8
+                }
+
+                currentRevealTime = Math.random() * (settings.moveRevealMax - settings.moveRevealMin) + settings.moveRevealMin;
+                
+                // For SVG transform, use pixel values.
+                // These values should be large enough to move the content (centered in a 400x320 viewBox)
+                // completely off-screen relative to the bcSVGContainer.
+                const offScreenX = containerWidth * 1.1; // e.g., ~550px if container is 500px wide
+                const offScreenY = containerHeight * 1.1; // e.g., ~440px if container is 400px high
+
+                const horizontalTransforms = [`translateX(${-offScreenX}px)`, `translateX(${offScreenX}px)`];
+                const verticalTransforms = [`translateY(${-offScreenY}px)`, `translateY(${offScreenY}px)`];
+                
+                // Simplified: Pick one axis, then start from one side and go to the other.
+                let startTransform, endTransform;
+                if (Math.random() < 0.5) { // Horizontal movement
+                    startTransform = Math.random() < 0.5 ? horizontalTransforms[0] : horizontalTransforms[1];
+                    endTransform = startTransform === horizontalTransforms[0] ? horizontalTransforms[1] : horizontalTransforms[0];
+                } else { // Vertical movement
+                    startTransform = Math.random() < 0.5 ? verticalTransforms[0] : verticalTransforms[1];
+                    endTransform = startTransform === verticalTransforms[0] ? verticalTransforms[1] : verticalTransforms[0];
+                }
+                
+                bcSVGGroup.style.transform = startTransform; 
+
+                requestAnimationFrame(() => { 
+                    requestAnimationFrame(() => { 
+                        bcSVGGroup.style.transition = `transform ${currentRevealTime / 1000}s linear`;
+                        bcSVGGroup.style.transform = endTransform; 
+                    });
+                });
+
+            } else { 
+                currentRevealTime = Math.random() * (settings.staticRevealMax - settings.staticRevealMin) + settings.staticRevealMin;
+                // bcSVGGroup is already at translate(0px,0px) with transition 'none' from blockCountDrawBlocksToSVG
+            }
+
+            if (bcRevealTimeoutId) clearTimeout(bcRevealTimeoutId);
+            bcRevealTimeoutId = setTimeout(() => {
+                if (bcSVGGroup) {
+                    bcSVGGroup.innerHTML = ''; // Clear blocks after reveal
+                }
+                bcSVGContainer.classList.add('hidden');
+                bcNumpad.classList.remove('hidden');
+                bcMessage.textContent = "请输入方块数量";
+                
+                if (bcSVGGroup) {
+                    bcSVGGroup.style.transition = 'none';
+                    bcSVGGroup.style.transform = 'translate(0px, 0px)';
+                }
+
+            }, currentRevealTime);
+        }
+        
+        function blockCountHandleNumpad(event) {
+            // ... (this function remains the same)
+            if (!bcGameActive || bcNumpad.classList.contains('hidden')) return;
+            const key = event.target.dataset.key;
+
+            if (key === 'C') {
+                bcUserInput = "";
+            } else if (key === 'Del') {
+                bcUserInput = bcUserInput.slice(0, -1);
+            } else if (bcUserInput.length < 2 && "0123456789".includes(key)) {
+                bcUserInput += key;
+            }
+            bcInputDisplay.textContent = bcUserInput;
+
+            const expectedLength = bcActualBlockCount < 10 ? 1 : 2;
+            if (bcUserInput.length === expectedLength && bcUserInput !== "") { 
+                blockCountCheckAnswer();
+            }
+        }
+
+        function blockCountCheckAnswer() {
+            // ... (this function remains the same)
+             bcNumpad.classList.add('hidden'); 
+            const userAnswer = parseInt(bcUserInput);
+            if (userAnswer === bcActualBlockCount) {
+                bcCorrectAnswers++;
+                bcMessage.textContent = `正确! 答案是 ${bcActualBlockCount}.`;
+            } else {
+                bcMessage.textContent = `错误. 答案是 ${bcActualBlockCount}, 您输入了 ${bcUserInput || '?'}.`;
+            }
+            blockCountUpdateScoreDisplay();
+            
+            let countdown = 3;
+            bcRoundCountdownDisplay.textContent = `下一轮: ${countdown}`;
+            bcRoundCountdownDisplay.classList.remove('hidden');
+            
+            if(bcNextRoundCountdownIntervalId) clearInterval(bcNextRoundCountdownIntervalId);
+            bcNextRoundCountdownIntervalId = setInterval(() => {
+                countdown--;
+                if (countdown > 0) {
+                    bcRoundCountdownDisplay.textContent = `下一轮: ${countdown}`;
+                } else {
+                    clearInterval(bcNextRoundCountdownIntervalId);
+                }
+            }, 1000);
+            if(bcNextRoundTimeoutId) clearTimeout(bcNextRoundTimeoutId);
+            bcNextRoundTimeoutId = setTimeout(blockCountNextRound, 3000); 
+        }
+        
+        function blockCountStopGameTimeouts() {
+            // ... (this function remains the same)
+            clearTimeout(bcRevealTimeoutId);
+            clearInterval(bcNextRoundCountdownIntervalId);
+            clearTimeout(bcNextRoundTimeoutId);
+            bcRevealTimeoutId = null;
+            bcNextRoundCountdownIntervalId = null;
+            bcNextRoundTimeoutId = null;
+        }
+
+        function blockCountStopGame() { 
+            bcGameActive = false;
+            blockCountStopGameTimeouts(); 
+
+            bcStartButton.disabled = false;
+            bcNumpad.classList.add('hidden');
+            bcRoundCountdownDisplay.classList.add('hidden');
+            
+            if (bcSVGGroup) { // Ensure the group is reset
+                bcSVGGroup.innerHTML = ''; 
+                bcSVGGroup.style.transition = 'none';
+                bcSVGGroup.style.transform = 'translate(0px, 0px)';
+            }
+            bcSVGContainer.classList.remove('hidden'); // Ensure container visible
+        }
+
+        function blockCountResetGame() {
+            blockCountStopGame(); 
+            
+            bcCurrentRound = 0;
+            bcCorrectAnswers = 0;
+            bcUserInput = "";
+            blockCountUpdateScoreDisplay();
+            bcMessage.textContent = "点击 '开始方块记忆' 按钮";
+            bcInputDisplay.textContent = "";
+            // bcSVGContainer.classList.remove('hidden'); // Handled by stopGame
+            // if (bcSVGGroup) bcSVGGroup.innerHTML = ''; // Handled by stopGame
+        }
+
+        Array.from(bcNumpad.querySelectorAll('button')).forEach(button => {
+            button.addEventListener('click', blockCountHandleNumpad);
+        });
+        bcStartButton.addEventListener('click', blockCountStartGame);
+
+
+
+
         // --- Initial Setup ---
-        document.addEventListener('DOMContentLoaded',()=>{schulteResetGame();memoryResetGame();stroopResetGame();nBackResetGame();vsResetGame();gameModeSelect.value='schulte';switchMode('schulte');});
+        document.addEventListener('DOMContentLoaded',()=>{
+            schulteResetGame();
+            memoryResetGame();
+            stroopResetGame();
+            nBackResetGame();
+            vsResetGame();
+            blockCountResetGame(); // Initialize new mode
+            gameModeSelect.value='schulte';
+            switchMode('schulte');
+        });
     </script>
 </body>
 </html>
