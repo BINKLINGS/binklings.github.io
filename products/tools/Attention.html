@@ -1,0 +1,866 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>注意力训练中心</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #1a202c; /* Deep dark background */
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            margin: 0;
+            padding: 0.5rem; /* Reduced padding for full screen feel */
+            box-sizing: border-box;
+            color: #e2e8f0; /* Light text color for general elements */
+        }
+        .container {
+            background-color: #2d3748; /* Slightly lighter dark background for container */
+            border-radius: 1rem; /* Slightly less rounded than before */
+            box-shadow: 0 8px 20px rgba(0, 0, 0, 0.3); /* Darker, more pronounced shadow */
+            padding-top: 1.5rem; /* Reduced padding */
+            padding-bottom: 1.5rem; /* Reduced padding */
+            text-align: center;
+            max-width: 95%; /* Maximize width usage */
+            width: 100%; /* Take full available width within max-width */
+            display: flex;
+            flex-direction: column;
+            gap: 1rem; /* Reduced gap between elements */
+            flex-grow: 1; /* Allow container to grow and fill space */
+            justify-content: center; /* Center content vertically within container */
+        }
+
+        /* Navigation Dropdown */
+        .navigation-select-wrapper {
+            margin-bottom: 1rem;
+            display: flex;
+            justify-content: center;
+        }
+        .navigation-select {
+            background-color: #4a5568;
+            color: #cbd5e1;
+            padding: 0.6rem 1.2rem;
+            border-radius: 0.5rem;
+            font-weight: 600;
+            cursor: pointer;
+            border: none;
+            outline: none;
+            appearance: none; /* Remove default dropdown arrow */
+            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 20 20' fill='currentColor'%3E%3Cpath fill-rule='evenodd' d='M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 000-1.414z' clip-rule='evenodd' /%3E%3C/svg%3E");
+            background-repeat: no-repeat;
+            background-position: right 0.75rem center;
+            background-size: 1.5em 1.5em;
+            padding-right: 2.5rem; /* Make space for the custom arrow */
+        }
+        .navigation-select:hover {
+            background-color: #64748b;
+            color: #f8fafc;
+        }
+        .navigation-select:focus {
+            box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.5);
+        }
+
+        /* Game Mode Containers */
+        .game-mode {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 1rem;
+            width: 100%;
+        }
+        .game-mode.hidden {
+            display: none;
+        }
+
+        /* Common Grid Styles */
+        .grid-container {
+            display: grid;
+            gap: 0.125rem; /* Very small gap */
+            width: 100%;
+            aspect-ratio: 1 / 1; /* Keep grid square */
+            margin: 0 auto;
+            max-width: 600px; /* Limit grid size on very large screens */
+            position: relative; /* For countdown and moving grid */
+        }
+        /* Wrapper for moving grid to contain overflow */
+        .memory-grid-wrapper {
+            position: relative;
+            overflow: hidden; /* Crucial for moving grid effect */
+            max-width: 800px; /* This is the visual boundary */
+            width: 100%;
+            aspect-ratio: 1 / 1;
+            margin: 0 auto;
+            border: 1px solid #64748b;
+            border-radius: 0.25rem;
+        }
+        /* The actual grid container that moves */
+        .memory-grid-container-actual {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%; /* Same size as wrapper */
+            height: 100%;
+            display: grid;
+            gap: 0.125rem;
+            transform: translateX(0); /* Default position */
+            padding: 20%;
+        }
+
+
+        .grid-cell {
+            background-color: #4a5568; /* Darker cell background */
+            border-radius: 0.25rem; /* Sharper corners */
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-size: 2rem; /* Adjusted font size for better fit */
+            font-weight: 600;
+            color: #e2e8f0; /* Light text color for numbers */
+            cursor: pointer;
+            user-select: none;
+            transition: background-color 0.2s ease, transform 0.1s ease;
+            box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.2); /* Subtle inner shadow */
+        }
+        .grid-cell:hover {
+            background-color: #64748b; /* Lighter dark on hover */
+            transform: translateY(-1px); /* Slight lift on hover */
+        }
+        .grid-cell.correct {
+            background-color: #34d399; /* Vibrant green for correct */
+            color: #064e3b; /* Darker green text */
+            box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.2), 0 0 10px rgba(52, 211, 153, 0.6); /* Green glow */
+            pointer-events: none; /* Disable further clicks on correct cells */
+        }
+        .grid-cell.incorrect {
+            background-color: #ef4444; /* Vibrant red for incorrect */
+            color: #450a0a; /* Darker red text */
+            animation: shake 0.3s ease-in-out; /* Shake animation */
+        }
+        @keyframes shake {
+            0% { transform: translateX(0); }
+            25% { transform: translateX(-5px); }
+            50% { transform: translateX(5px); }
+            75% { transform: translateX(-5px); }
+            100% { transform: translateX(0); }
+        }
+
+        /* Timer and Button Styles */
+        .timer-display {
+            font-size: 3rem; /* Even larger timer font */
+            font-weight: 700;
+            color: #f8fafc; /* Very light color for timer */
+            margin-bottom: 1rem;
+        }
+        .button {
+            background-color: #3b82f6; /* Blue button */
+            color: white;
+            padding: 0.75rem 1.5rem;
+            border-radius: 0.75rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: background-color 0.2s ease, transform 0.1s ease, box-shadow 0.2s ease;
+            box-shadow: 0 4px 10px rgba(59, 130, 246, 0.3);
+            border: none;
+            outline: none;
+        }
+        .button:hover {
+            background-color: #2563eb; /* Darker blue on hover */
+            transform: translateY(-1px);
+            box-shadow: 0 6px 15px rgba(59, 130, 246, 0.4);
+        }
+        .button:active {
+            transform: translateY(0);
+            box-shadow: 0 2px 5px rgba(59, 130, 246, 0.2);
+        }
+        .button:disabled {
+            background-color: #6b7280;
+            cursor: not-allowed;
+            box-shadow: none;
+        }
+
+        /* Message Display */
+        .message {
+            font-size: 1.1rem;
+            color: #a0aec0; /* Lighter gray for messages */
+            min-height: 1.5rem; /* Reserve space for messages */
+        }
+
+        /* Memory Matrix Specific Styles */
+        .memory-cell.highlight {
+            background-color: #f6e05e; /* Yellow for highlight */
+            color: #744210;
+        }
+        .memory-cell.selected { /* For user's correct selection */
+            background-color: #34d399; /* Same as .correct */
+            color: #064e3b;
+        }
+        .difficulty-options {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+            gap: 1rem;
+            margin-bottom: 1rem;
+            color: #cbd5e1;
+            font-size: 0.95rem;
+        }
+        .difficulty-options label {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+        .difficulty-options select, .difficulty-options input[type="checkbox"] {
+            background-color: #4a5568;
+            border: 1px solid #64748b;
+            border-radius: 0.375rem;
+            padding: 0.25rem 0.5rem;
+            color: #f8fafc;
+        }
+        .difficulty-options select:focus, .difficulty-options input[type="checkbox"]:focus {
+            outline: none;
+            border-color: #3b82f6;
+            box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.5);
+        }
+        .countdown-display {
+            font-size: 5rem; /* Large countdown numbers */
+            font-weight: 900;
+            color: #f8fafc;
+            position: absolute; /* Position over the grid */
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            z-index: 10; /* Ensure it's on top */
+            text-shadow: 0 0 15px rgba(0,0,0,0.8);
+        }
+
+        /* Stroop Effect Specific Styles */
+        .stroop-word {
+            font-size: 4rem; /* Large font for the word */
+            font-weight: 700;
+            margin-bottom: 1rem;
+            text-shadow: 0 0 10px rgba(0,0,0,0.5); /* Subtle shadow for readability */
+        }
+        .stroop-options {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+            gap: 0.75rem;
+            margin-top: 1rem;
+        }
+        .stroop-color-button {
+            padding: 0.8rem 1.8rem;
+            border-radius: 0.75rem;
+            font-size: 1.2rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: transform 0.1s ease, box-shadow 0.2s ease, background-color 0.2s ease, color 0.2s ease;
+            border: none;
+            outline: none;
+            /* Text color will be set by JS, background is fixed */
+            background-color: #4a5568; /* Default button background */
+            box-shadow: 0 4px 10px rgba(0,0,0,0.2);
+        }
+        .stroop-color-button:hover {
+            transform: translateY(-2px);
+            background-color: #64748b; /* Lighter on hover */
+            box-shadow: 0 6px 15px rgba(0,0,0,0.3);
+        }
+        .stroop-color-button:active {
+            transform: translateY(0);
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+        }
+        /* Feedback styles for correct/incorrect Stroop button clicks */
+        .stroop-color-button.correct-stroop-feedback {
+            background-color: #34d399 !important; /* Override default/hover */
+            color: #064e3b !important; /* Ensure text is visible */
+        }
+        .stroop-color-button.incorrect-stroop-feedback {
+            background-color: #ef4444 !important; /* Override default/hover */
+            color: #450a0a !important; /* Ensure text is visible */
+            animation: shake 0.3s ease-in-out;
+        }
+
+
+        /* N-Back Task Specific Styles */
+        .nback-display-item {
+            font-size: 6rem;
+            font-weight: 900;
+            color: #f8fafc;
+            min-height: 6rem; /* Ensure consistent height */
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            margin-bottom: 1rem;
+        }
+        .nback-controls {
+            display: flex;
+            gap: 1rem;
+            margin-top: 1rem;
+        }
+        .nback-difficulty-options {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+            gap: 1rem;
+            margin-bottom: 1rem;
+            color: #cbd5e1;
+            font-size: 0.95rem;
+        }
+        .nback-difficulty-options label {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+        .nback-difficulty-options select {
+            background-color: #4a5568;
+            border: 1px solid #64748b;
+            border-radius: 0.375rem;
+            padding: 0.25rem 0.5rem;
+            color: #f8fafc;
+        }
+
+        /* Visual Search Specific Styles */
+        .visual-search-target-display {
+            font-size: 2.5rem;
+            font-weight: 700;
+            color: #f8fafc;
+            margin-bottom: 1rem;
+        }
+        .visual-search-grid-container {
+            /* Inherits grid-container styles */
+        }
+        .visual-search-cell {
+            /* Inherits grid-cell styles */
+            font-size: 1.5rem; /* Smaller font for more cells */
+        }
+        .visual-search-cell.found {
+            background-color: #34d399; /* Green for found targets */
+            color: #064e3b;
+            pointer-events: none;
+        }
+        .visual-search-cell.missed {
+            background-color: #f6e05e; /* Yellow for missed targets at end */
+            color: #744210;
+        }
+        .visual-search-cell.incorrect-click { /* For clicks on non-target cells */
+            background-color: #ef4444; /* Red for incorrect clicks */
+            color: #450a0a;
+            animation: shake 0.3s ease-in-out;
+        }
+
+
+        /* Responsive adjustments */
+        @media (max-width: 640px) {
+            .container { padding: 1rem; gap: 0.75rem; }
+            .grid-cell { font-size: 1.6rem; }
+            .schulte-grid-cell-7x7 { font-size: 1.2rem; }
+            .timer-display { font-size: 2.5rem; }
+            .button { padding: 0.6rem 1.2rem; font-size: 0.9rem; }
+            .navigation-select { padding: 0.5rem 1rem; font-size: 0.85rem; padding-right: 2rem; }
+            .stroop-word { font-size: 3rem; }
+            .stroop-color-button { padding: 0.6rem 1.2rem; font-size: 1rem; }
+            .difficulty-options { flex-direction: column; align-items: flex-start; }
+            .nback-display-item { font-size: 4rem; }
+            .visual-search-target-display { font-size: 2rem; }
+            .visual-search-cell { font-size: 1.2rem; }
+        }
+        @media (max-width: 480px) {
+            .grid-cell { font-size: 1.4rem; }
+            .schulte-grid-cell-7x7 { font-size: 1rem; }
+            .timer-display { font-size: 2rem; }
+            .navigation-select { width: 100%; }
+            .stroop-word { font-size: 2.5rem; }
+            .countdown-display { font-size: 4rem; }
+            .nback-display-item { font-size: 3rem; }
+            .visual-search-target-display { font-size: 1.8rem; }
+            .visual-search-cell { font-size: 1rem; }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="navigation-select-wrapper">
+            <select id="gameModeSelect" class="navigation-select">
+                <option value="schulte">舒尔特方格</option>
+                <option value="memory">记忆矩阵</option>
+                <option value="stroop">斯特鲁普效应</option>
+                <option value="nback">N-Back 训练</option>
+                <option value="visualSearch">视觉搜索</option>
+            </select>
+        </div>
+
+        <div id="schulte-mode" class="game-mode">
+            <div class="difficulty-options">
+                <label>格子大小:
+                    <select id="schulteGridSizeSelect">
+                        <option value="5" selected>5x5</option>
+                        <option value="7">7x7</option>
+                    </select>
+                </label>
+            </div>
+            <div id="schulte-timer" class="timer-display">00:00.00</div>
+            <div id="schulte-grid-container" class="grid-container"></div>
+            <button id="schulteResetButton" class="button mt-4">重新开始</button>
+            <div id="schulte-message" class="message">点击数字 '1' 开始计时</div>
+        </div>
+
+        <div id="memory-mode" class="game-mode hidden">
+            <div class="difficulty-options">
+                <label>难度系数:
+                    <select id="memoryDifficultySelect">
+                        <option value="easy">简单</option>
+                        <option value="medium" selected>中等</option>
+                        <option value="hard">困难</option>
+                    </select>
+                </label>
+                <!-- Removed checkbox for moving grid, now randomized by difficulty -->
+            </div>
+            <div id="memory-timer" class="timer-display">00:00.00</div>
+            <div id="memory-countdown" class="countdown-display hidden"></div>
+            <div class="memory-grid-wrapper">
+                <div id="memory-grid-container-actual" class="memory-grid-container-actual"></div>
+            </div>
+            <button id="memoryStartButton" class="button mt-4">开始记忆训练</button>
+            <div id="memory-message" class="message">点击 '开始记忆训练' 按钮</div>
+        </div>
+
+        <div id="stroop-mode" class="game-mode hidden">
+            <div id="stroop-timer" class="timer-display">00:00.00</div>
+            <div id="stroop-word-display" class="stroop-word"></div>
+            <div id="stroop-options" class="stroop-options"></div>
+            <button id="stroopStartButton" class="button mt-4">开始斯特鲁普</button>
+            <div id="stroop-message" class="message">点击 '开始斯特鲁普' 按钮，然后点击【大字实际墨水颜色】对应的【下方文字按钮】</div>
+        </div>
+
+        <div id="nback-mode" class="game-mode hidden">
+            <div class="nback-difficulty-options">
+                <label>N 值: <select id="nbackNValueSelect"><option value="1">1-Back</option><option value="2" selected>2-Back</option><option value="3">3-Back</option></select></label>
+                <label>轮数: <select id="nbackRoundsSelect"><option value="10">10 轮</option><option value="20" selected>20 轮</option><option value="30">30 轮</option></select></label>
+                <label>难度系数: <select id="nbackDifficultySelect"><option value="easy">简单</option><option value="medium" selected>中等</option><option value="hard">困难</option></select></label>
+            </div>
+            <div id="nback-timer" class="timer-display">00:00.00</div>
+            <div id="nback-display-item" class="nback-display-item"></div>
+            <div class="nback-controls">
+                <button id="nbackMatchButton" class="button">匹配</button>
+                <button id="nbackNoMatchButton" class="button">不匹配</button>
+            </div>
+            <button id="nbackStartButton" class="button mt-4">开始 N-Back</button>
+            <div id="nback-message" class="message">点击 '开始 N-Back' 按钮</div>
+        </div>
+
+        <div id="visualSearch-mode" class="game-mode hidden">
+            <div class="difficulty-options">
+                <label>难度系数:
+                    <select id="visualSearchDifficultySelect">
+                        <option value="easy">简单</option>
+                        <option value="medium" selected>中等</option>
+                        <option value="hard">困难</option>
+                    </select>
+                </label>
+            </div>
+            <div id="visualSearch-timer" class="timer-display">00:00.00</div>
+            <div id="visualSearch-target-display" class="visual-search-target-display">目标: A</div>
+            <div id="visualSearch-grid-container" class="grid-container visual-search-grid-container"></div>
+            <button id="visualSearchStartButton" class="button mt-4">开始视觉搜索</button>
+            <div id="visualSearch-message" class="message">点击 '开始视觉搜索' 按钮</div>
+        </div>
+    </div>
+
+    <script>
+        // --- Global Variables and Utility Functions ---
+        let currentActiveMode = 'schulte';
+        function formatTime(ms) { const m = Math.floor(ms/60000), s = Math.floor((ms%60000)/1000), d = Math.floor((ms%1000)/10); return `${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')}.${String(d).padStart(2,'0')}`; }
+        function shuffleArray(arr) { for (let i=arr.length-1; i>0; i--) { const j=Math.floor(Math.random()*(i+1)); [arr[i],arr[j]]=[arr[j],arr[i]]; }}
+
+        const gameModeSelect = document.getElementById('gameModeSelect');
+        const gameModes = document.querySelectorAll('.game-mode');
+        gameModeSelect.addEventListener('change', (e) => switchMode(e.target.value));
+
+        function switchMode(mode) {
+            if (currentActiveMode === mode) return;
+            // Stop/clear current mode
+            if (currentActiveMode === 'schulte') schulteStopTimer();
+            else if (currentActiveMode === 'memory') { memoryStopTimer(); clearTimeout(memoryRevealTimeout); clearTimeout(memoryNextRoundTimeout); clearInterval(memoryCountdownInterval); document.getElementById('memory-countdown').classList.add('hidden'); const mGA=document.getElementById('memory-grid-container-actual'); mGA.style.transition='none'; mGA.style.transform='translate(0,0)'; }
+            else if (currentActiveMode === 'stroop') stroopStopTimer();
+            else if (currentActiveMode === 'nback') { nBackStopTimer(); clearInterval(nBackItemDisplayInterval); }
+            else if (currentActiveMode === 'visualSearch') visualSearchStopTimer();
+            // Switch UI
+            gameModes.forEach(gm => gm.classList.add('hidden')); document.getElementById(`${mode}-mode`).classList.remove('hidden'); currentActiveMode = mode;
+            // Init/reset new mode
+            if (mode === 'schulte') schulteResetGame(); else if (mode === 'memory') memoryResetGame();
+            else if (mode === 'stroop') stroopResetGame(); else if (mode === 'nback') nBackResetGame();
+            else if (mode === 'visualSearch') visualSearchResetGame();
+        }
+
+        // --- Schulte Grid ---
+        const schulteGC=document.getElementById('schulte-grid-container'), schulteTD=document.getElementById('schulte-timer'), schulteRB=document.getElementById('schulteResetButton'), schulteMD=document.getElementById('schulte-message'), schulteGSS=document.getElementById('schulteGridSizeSelect');
+        let schulteN=[], schulteCN=1, schulteST, schulteTI, schulteGA=false, schulteGS=parseInt(schulteGSS.value), schulteTN=schulteGS*schulteGS;
+        schulteGSS.addEventListener('change', ()=>{ schulteGS=parseInt(schulteGSS.value); schulteTN=schulteGS*schulteGS; schulteResetGame(); });
+        function schulteGenerateGrid(){ schulteGC.innerHTML=''; schulteN=Array.from({length:schulteTN},(_,i)=>i+1); shuffleArray(schulteN); schulteGC.style.gridTemplateColumns=`repeat(${schulteGS},1fr)`; schulteGC.style.gridTemplateRows=`repeat(${schulteGS},1fr)`; const bfS=schulteGS===5?2:1.6, cfS=Math.max(0.8,bfS-(schulteGS-5)*0.2); schulteN.forEach(n=>{const c=document.createElement('div'); c.classList.add('grid-cell'); if(schulteGS===7)c.classList.add('schulte-grid-cell-7x7'); c.style.fontSize=`${cfS}rem`; c.textContent=n; c.dataset.number=n; c.addEventListener('click',schulteHandleCellClick); schulteGC.appendChild(c);});}
+        function schulteHandleCellClick(e){ if(currentActiveMode!=='schulte')return; const clN=parseInt(e.target.dataset.number); if(clN===1&&!schulteGA){schulteGA=true;schulteST=Date.now();schulteTI=setInterval(schulteUpdateTimerDisplay,10);schulteMD.textContent=`找到下一个数字: ${schulteCN+1}`;} if(!schulteGA){schulteMD.textContent='请先点击数字 "1" 开始计时！';return;} if(clN===schulteCN){e.target.classList.add('correct');schulteCN++; if(schulteCN<=schulteTN){schulteMD.textContent=`找到下一个数字: ${schulteCN}`;}else{schulteStopTimer();const tT=(Date.now()-schulteST)/1000;schulteMD.textContent=`恭喜！您完成了！用时: ${tT.toFixed(2)} 秒`;schulteGA=false;}}else{e.target.classList.add('incorrect');setTimeout(()=>e.target.classList.remove('incorrect'),300);schulteMD.textContent=`错了！请点击数字 ${schulteCN}`;}}
+        function schulteUpdateTimerDisplay(){schulteTD.textContent=formatTime(Date.now()-schulteST);} function schulteStopTimer(){clearInterval(schulteTI);}
+        function schulteResetGame(){schulteStopTimer();schulteGS=parseInt(schulteGSS.value);schulteTN=schulteGS*schulteGS;schulteCN=1;schulteGA=false;schulteTD.textContent='00:00.00';schulteMD.textContent="点击数字 '1' 开始计时";schulteGenerateGrid();} schulteRB.addEventListener('click',schulteResetGame);
+
+        // --- Memory Matrix ---
+        const memoryGCA=document.getElementById('memory-grid-container-actual'), memoryTD=document.getElementById('memory-timer'), memorySB=document.getElementById('memoryStartButton'), memoryMD=document.getElementById('memory-message'), memoryCD=document.getElementById('memory-countdown'), memoryDS=document.getElementById('memoryDifficultySelect');
+        let memoryHC=[], memoryCC=[], memoryGA=false, memoryAR=false, memoryST, memoryTI, memoryRT, memoryNRT, memoryCI;
+        const MEMORY_GRID_SIZE_CONST = 6; let memoryDiff = memoryDS.value;
+        const MEMORY_DIFFICULTY_SETTINGS = { // min/max RevealDuration (ms), min/max AnimationSpeedFactor, moveProbability (0-1)
+            'easy':  {minH:3,maxH:5, minRD:500,maxRD:1300, minASF:0.06, maxASF:0.1, moveP:0.3}, // Slower, longer display, less move
+            'medium':{minH:5,maxH:7, minRD:150, maxRD:700, minASF:0.05, maxASF:0.11, moveP:0.4},
+            'hard':  {minH:6,maxH:11, minRD:50, maxRD:400, minASF:0.05, maxASF:0.13, moveP:0.4}  // Faster, shorter, more move
+        };
+        memoryDS.addEventListener('change', ()=>{memoryDiff=memoryDS.value;});
+        function memoryGenerateGrid(){ memoryGCA.innerHTML=''; memoryGCA.style.gridTemplateColumns=`repeat(${MEMORY_GRID_SIZE_CONST},1fr)`; memoryGCA.style.gridTemplateRows=`repeat(${MEMORY_GRID_SIZE_CONST},1fr)`; const fS='1.2rem'; for(let i=0;i<MEMORY_GRID_SIZE_CONST*MEMORY_GRID_SIZE_CONST;i++){const c=document.createElement('div');c.classList.add('grid-cell','memory-cell');c.dataset.index=i;c.style.fontSize=fS;c.addEventListener('click',memoryHandleCellClick);memoryGCA.appendChild(c);}}
+        function memoryStartGame(){ memoryResetGameFlagsAndTimers(); memoryGA=true; memorySB.disabled=true; memoryDiff=memoryDS.value; let cd=2; memoryCD.textContent=cd; memoryCD.classList.remove('hidden'); memoryMD.textContent='准备...'; memoryCI=setInterval(()=>{cd--; if(cd>0){memoryCD.textContent=cd;}else{clearInterval(memoryCI);memoryCD.classList.add('hidden');memoryRevealPattern();}},1000);}
+        function memoryRevealPattern(){
+            const dS=MEMORY_DIFFICULTY_SETTINGS[memoryDiff];
+            const moveGrid = Math.random() < dS.moveP;
+            if(moveGrid){
+                dS.minH -= 2;
+                dS.maxH -= 3;
+            }
+            memoryMD.textContent='记住高亮方格...'; const nTH=Math.floor(Math.random()*(dS.maxH-dS.minH+1))+dS.minH;
+            const allCI=Array.from({length:MEMORY_GRID_SIZE_CONST*MEMORY_GRID_SIZE_CONST},(_,i)=>i); shuffleArray(allCI); memoryHC=allCI.slice(0,nTH);
+            Array.from(memoryGCA.children).forEach(c=>c.classList.remove('highlight'));
+            const rRD=Math.random()*(dS.maxRD-dS.minRD)+dS.minRD; const rASF=Math.random()*(dS.maxASF-dS.minASF)+dS.minASF;
+            const effectiveDuration = moveGrid ? rRD/rASF : rRD; // Duration for movement or static display
+
+            if(moveGrid){
+                memoryGCA.style.transition='none'; const dirs=['horizontal','vertical']; const mT=dirs[Math.floor(Math.random()*dirs.length)]; const pM=Math.random()<0.5; let sT,eT;
+                // Use larger translate values to ensure it moves fully off-screen
+                if(mT==='horizontal'){sT=pM?'translateX(-150%)':'translateX(150%)';eT=pM?'translateX(150%)':'translateX(-150%)';}
+                else{sT=pM?'translateY(-150%)':'translateY(150%)';eT=pM?'translateY(150%)':'translateY(-150%)';}
+                memoryGCA.style.transform=sT; memoryHC.forEach(i=>{memoryGCA.children[i].classList.add('highlight');}); memoryGCA.offsetWidth;
+                memoryGCA.style.transition=`transform ${effectiveDuration/1000}s linear`; memoryGCA.style.transform=eT;
+                memoryRT=setTimeout(()=>{
+                    memoryGCA.style.transition='none'; memoryGCA.style.transform='translate(0,0)';
+                    // Crucial: Ensure transform is applied before removing highlight to avoid flash
+                    setTimeout(() => {
+                        memoryHC.forEach(i=>{if(memoryGCA.children[i])memoryGCA.children[i].classList.remove('highlight');});
+                        memoryMD.textContent='现在点击您记住的方格！'; memoryAR=true; memoryST=Date.now(); memoryTI=setInterval(memoryUpdateTimerDisplay,10);
+                    }, 0); // Tiny delay to allow render after transform reset
+                },effectiveDuration);
+            }else{
+                memoryGCA.style.transform='translate(0,0)'; memoryHC.forEach(i=>{memoryGCA.children[i].classList.add('highlight');});
+                memoryRT=setTimeout(()=>{
+                    memoryHC.forEach(i=>{if(memoryGCA.children[i])memoryGCA.children[i].classList.remove('highlight');});
+                    memoryMD.textContent='现在点击您记住的方格！'; memoryAR=true; memoryST=Date.now(); memoryTI=setInterval(memoryUpdateTimerDisplay,10);
+                },effectiveDuration);
+            }
+        }
+        function memoryHandleCellClick(e){if(!memoryGA||!memoryAR)return; const cI=parseInt(e.target.dataset.index); if(memoryCC.includes(cI)||e.target.classList.contains('selected'))return; memoryCC.push(cI); const iC=memoryHC.includes(cI); if(iC){e.target.classList.add('selected');}else{e.target.classList.add('incorrect');setTimeout(()=>e.target.classList.remove('incorrect'),300);} const cS=memoryCC.filter(idx=>memoryHC.includes(idx)).length; if(cS===memoryHC.length&&memoryCC.length===memoryHC.length){memoryStopTimer();memoryAR=false;memoryGA=false; const tT=(Date.now()-memoryST)/1000; memoryMD.textContent=`本轮完成！用时: ${tT.toFixed(2)} 秒. 准备下一轮...`; memoryNRT=setTimeout(memoryStartGame,2000);}else if(memoryCC.length>=memoryHC.length){if(memoryCC.filter(idx=>!memoryHC.includes(idx)).length>0){memoryStopTimer();memoryAR=false;memoryGA=false;memoryMD.textContent=`本轮失败！有错误点击。请点击 '开始记忆训练' 重新开始。`;memorySB.disabled=false;}}}
+        function memoryUpdateTimerDisplay(){if(!memoryST)return;memoryTD.textContent=formatTime(Date.now()-memoryST);}
+        function memoryStopTimer(){clearInterval(memoryTI);memoryTI=null;}
+        function memoryResetGameFlagsAndTimers(){memoryStopTimer();clearTimeout(memoryRT);clearTimeout(memoryNRT);clearInterval(memoryCI);memoryCD.classList.add('hidden');memoryAR=false;memoryHC=[];memoryCC=[];memoryTD.textContent='00:00.00';memoryST=null;Array.from(memoryGCA.children).forEach(c=>{c.classList.remove('highlight','selected','incorrect');});memoryGCA.style.transition='none';memoryGCA.style.transform='translate(0,0)';}
+        function memoryResetGame(){memoryResetGameFlagsAndTimers();memoryGA=false;memorySB.disabled=false;memoryMD.textContent="点击 '开始记忆训练' 按钮";memoryGenerateGrid();}
+        memorySB.addEventListener('click',memoryStartGame);
+
+        // --- Stroop Effect ---
+        const stroopTD=document.getElementById('stroop-timer'), stroopWD=document.getElementById('stroop-word-display'), stroopOC=document.getElementById('stroop-options'), stroopSB=document.getElementById('stroopStartButton'), stroopMD=document.getElementById('stroop-message');
+        const STROOP_WORDS_LIST=['红','蓝','绿','黄'], STROOP_CSS_COLORS_LIST=['red','skyblue','lightgreen','yellow'];
+        const STROOP_WORD_TO_CSS={'红':'red','蓝':'skyblue','绿':'lightgreen','黄':'yellow'}; const STROOP_CSS_TO_WORD={'red':'红','skyblue':'蓝','lightgreen':'绿','yellow':'黄'};
+        let stroopGA=false, stroopST, stroopTI, stroopCurrentWordInkCSS, stroopCorrectC=0, stroopTotalA=0; const STROOP_ROUNDS_CONST=10;
+
+        function stroopGenerateButtons(){
+            stroopOC.innerHTML='';
+            let buttonTextWords = [...STROOP_WORDS_LIST]; shuffleArray(buttonTextWords); // ['蓝', '红', '黄', '绿']
+            let buttonInkCssColors = [...STROOP_CSS_COLORS_LIST]; shuffleArray(buttonInkCssColors); // ['green', 'yellow', 'red', 'blue']
+
+            for(let i=0; i<buttonTextWords.length; i++){
+                const btnWord = buttonTextWords[i]; // e.g., '蓝'
+                let inkCss = buttonInkCssColors[i]; // e.g., 'green'
+                // Ensure button's text meaning is different from its ink color
+                if (STROOP_WORD_TO_CSS[btnWord] === inkCss) { // If '蓝' (blue) is to be written in 'blue' ink
+                    // Swap with the next ink color, wrapping around
+                    inkCss = buttonInkCssColors[(i + 1) % buttonInkCssColors.length];
+                    // This simple swap might still lead to the swapped ink color being the same as the *new* word's meaning
+                    // A more robust solution would be a loop or more complex assignment, but for 4 colors, this is often enough.
+                    // To be absolutely sure, after a swap, re-check:
+                    if (STROOP_WORD_TO_CSS[btnWord] === inkCss) { // If still same after one swap (e.g. all inks were initially aligned with words)
+                        // Find any other ink color that's different
+                        const otherInks = STROOP_CSS_COLORS_LIST.filter(c => c !== inkCss);
+                        if (otherInks.length > 0) inkCss = otherInks[0];
+                    }
+                }
+                const button = document.createElement('button'); button.classList.add('stroop-color-button');
+                button.textContent = btnWord; button.dataset.wordText = btnWord; // The text on the button "红"
+                button.style.color = inkCss; // The ink color of the text "红"
+                button.addEventListener('click', stroopHandleColorClick); stroopOC.appendChild(button);
+            }
+        }
+        function stroopGenerateTest(){
+            const centralWordText = STROOP_WORDS_LIST[Math.floor(Math.random()*STROOP_WORDS_LIST.length)]; // e.g. "绿"
+            let centralWordInkCss = STROOP_CSS_COLORS_LIST[Math.floor(Math.random()*STROOP_CSS_COLORS_LIST.length)]; // e.g. "red"
+            while(STROOP_WORD_TO_CSS[centralWordText] === centralWordInkCss){ // If "绿" (green) is to be in green ink
+                centralWordInkCss = STROOP_CSS_COLORS_LIST[Math.floor(Math.random()*STROOP_CSS_COLORS_LIST.length)];
+            }
+            stroopCurrentWordInkCSS = centralWordInkCss; // This is the color the user must identify, e.g. "red"
+            stroopWD.textContent = centralWordText; // Display "绿"
+            stroopWD.style.color = stroopCurrentWordInkCSS; // In red ink
+            stroopGenerateButtons();
+        }
+        function stroopStartGame(){if(stroopGA)return;stroopResetGameFlags();stroopGA=true;stroopSB.disabled=true;stroopMD.textContent='请点击【大字实际墨水颜色】对应的【下方文字按钮】';stroopST=Date.now();stroopTI=setInterval(stroopUpdateTimerDisplay,10);stroopGenerateTest();}
+        function stroopHandleColorClick(e){
+            if(!stroopGA)return;
+            const clickedButtonWordText = e.target.dataset.wordText; // e.g., User clicked button with text "红"
+            stroopTotalA++;
+            // Correct choice is the button whose TEXT (e.g. "红") matches the MEANING of the central word's INK (e.g. if ink is 'red', then button with "红")
+            const correctButtonWordText = STROOP_CSS_TO_WORD[stroopCurrentWordInkCSS];
+
+            if(clickedButtonWordText === correctButtonWordText){ stroopCorrectC++; e.target.classList.add('correct-stroop-feedback'); }
+            else{ e.target.classList.add('incorrect-stroop-feedback'); }
+            setTimeout(()=>{ e.target.classList.remove('correct-stroop-feedback','incorrect-stroop-feedback');
+                if(stroopTotalA<STROOP_ROUNDS_CONST){stroopGenerateTest();stroopMD.textContent=`正确: ${stroopCorrectC}/${stroopTotalA}`;}
+                else{stroopStopTimer();const tT=(Date.now()-stroopST)/1000;stroopMD.textContent=`测试完成！正确率: ${((stroopCorrectC/STROOP_ROUNDS_CONST)*100).toFixed(0)}% 用时: ${tT.toFixed(2)} 秒`;stroopGA=false;stroopSB.disabled=false;}
+            }, 500);
+        }
+        function stroopUpdateTimerDisplay(){stroopTD.textContent=formatTime(Date.now()-stroopST);} function stroopStopTimer(){clearInterval(stroopTI);}
+        function stroopResetGameFlags(){stroopStopTimer();stroopCorrectC=0;stroopTotalA=0;stroopTD.textContent='00:00.00';stroopWD.textContent='';stroopWD.style.color='';}
+        function stroopResetGame(){stroopResetGameFlags();stroopGA=false;stroopSB.disabled=false;stroopMD.textContent="点击 '开始斯特鲁普' 按钮...";stroopGenerateButtons();}
+        stroopSB.addEventListener('click',stroopStartGame);
+
+
+
+        // --- N-Back Task ---
+        const nBackTimerDisplay = document.getElementById('nback-timer');
+        const nBackDisplayItem = document.getElementById('nback-display-item');
+        const nBackMatchButton = document.getElementById('nbackMatchButton');
+        const nBackNoMatchButton = document.getElementById('nbackNoMatchButton');
+        const nBackStartButton = document.getElementById('nbackStartButton');
+        const nBackMessageDisplay = document.getElementById('nback-message');
+        const nBackNValueSelect = document.getElementById('nbackNValueSelect');
+        const nBackRoundsSelect = document.getElementById('nbackRoundsSelect');
+        const nBackDifficultySelect = document.getElementById('nbackDifficultySelect');
+
+        let nBackNValue = parseInt(nBackNValueSelect.value);
+        let nBackRounds = parseInt(nBackRoundsSelect.value);
+        let nBackSequence = [];
+        let nBackCurrentRound = 0;
+        let nBackGameActive = false;
+        let nBackAwaitingResponse = false;
+        let nBackStartTime;
+        let nBackTimerInterval;
+        let nBackItemDisplayTimeoutId; // Changed from nBackItemDisplayInterval to reflect setTimeout
+        let nBackCorrectCount = 0;
+        let nBackDifficulty = nBackDifficultySelect.value;
+
+        const NBACK_ITEMS_LIST = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ'.split('');
+        const NBACK_DIFFICULTY_SETTINGS_OBJ = {
+            'easy':   { minDisplayInterval: 2200, maxDisplayInterval: 3000, targetMatchProbability: 0.35 },
+            'medium': { minDisplayInterval: 1400, maxDisplayInterval: 2200, targetMatchProbability: 0.35 },
+            'hard':   { minDisplayInterval: 700, maxDisplayInterval: 1400, targetMatchProbability: 0.3 }
+        };
+        const NBACK_TARGET_MATCH_PROBABILITY_DEFAULT = 0.35;
+        const NBACK_FLASH_DURATION = 100; // ms for the flash/blank display
+
+        nBackNValueSelect.addEventListener('change', () => { nBackNValue = parseInt(nBackNValueSelect.value); nBackResetGame(); });
+        nBackRoundsSelect.addEventListener('change', () => { nBackRounds = parseInt(nBackRoundsSelect.value); nBackResetGame(); });
+        nBackDifficultySelect.addEventListener('change', () => { nBackDifficulty = nBackDifficultySelect.value; nBackResetGame(); });
+
+        function nBackGenerateRandomItem(excludeItem = null) {
+            let item;
+            let attempts = 0;
+            do {
+                item = NBACK_ITEMS_LIST[Math.floor(Math.random() * NBACK_ITEMS_LIST.length)];
+                attempts++;
+            } while (excludeItem && item === excludeItem && attempts < NBACK_ITEMS_LIST.length * 2);
+            return item;
+        }
+
+        function nBackScheduleNextItem() {
+            if (!nBackGameActive) return; // Don't schedule if game is not active
+
+            const settings = NBACK_DIFFICULTY_SETTINGS_OBJ[nBackDifficulty] || NBACK_DIFFICULTY_SETTINGS_OBJ['medium'];
+            const randomInterval = Math.random() * (settings.maxDisplayInterval - settings.minDisplayInterval) + settings.minDisplayInterval;
+            
+            if (nBackItemDisplayTimeoutId) clearTimeout(nBackItemDisplayTimeoutId);
+
+            nBackItemDisplayTimeoutId = setTimeout(() => {
+                if (nBackGameActive) {
+                    nBackDisplayNextItem();
+                }
+            }, randomInterval);
+        }
+
+
+        function nBackStartGame() {
+            if (nBackGameActive) return;
+            nBackResetGameFlags();
+            nBackGameActive = true;
+            nBackStartButton.disabled = true;
+            nBackMatchButton.disabled = false;
+            nBackNoMatchButton.disabled = false;
+            nBackMessageDisplay.textContent = '游戏进行中...';
+            nBackStartTime = Date.now();
+            nBackTimerInterval = setInterval(nBackUpdateTimerDisplay, 10);
+            
+            nBackDisplayNextItem(); // Display first item immediately
+        }
+
+        function nBackDisplayNextItem() {
+            // Check if game ended or rounds completed before proceeding
+            if (!nBackGameActive || (nBackCurrentRound >= nBackRounds && nBackRounds > 0) ) { // nBackRounds > 0 ensures it handles initial call if rounds is 0
+                if (nBackGameActive && nBackCurrentRound >= nBackRounds) { // If rounds complete and game was active
+                     nBackEndGame();
+                }
+                return;
+            }
+
+            nBackDisplayItem.textContent = ''; // Flash: Clear the display
+
+            setTimeout(() => {
+                if (!nBackGameActive) return; // Re-check after flash delay
+
+                nBackAwaitingResponse = false;
+
+                let newItem;
+                const settings = NBACK_DIFFICULTY_SETTINGS_OBJ[nBackDifficulty] || NBACK_DIFFICULTY_SETTINGS_OBJ['medium'];
+                const targetMatchProb = settings.targetMatchProbability || NBACK_TARGET_MATCH_PROBABILITY_DEFAULT;
+
+                if (nBackCurrentRound >= nBackNValue && Math.random() < targetMatchProb) {
+                    newItem = nBackSequence[nBackCurrentRound - nBackNValue];
+                } else {
+                    let potentialNBackItem = null;
+                    if (nBackCurrentRound >= nBackNValue) {
+                        potentialNBackItem = nBackSequence[nBackCurrentRound - nBackNValue];
+                    }
+                    newItem = nBackGenerateRandomItem(potentialNBackItem);
+                }
+
+                nBackSequence.push(newItem);
+                nBackDisplayItem.textContent = newItem;
+                nBackCurrentRound++;
+
+                nBackMatchButton.classList.remove('correct', 'incorrect');
+                nBackNoMatchButton.classList.remove('correct', 'incorrect');
+
+                if (nBackCurrentRound > nBackNValue) {
+                    nBackAwaitingResponse = true;
+                    nBackMessageDisplay.textContent = `第 ${nBackCurrentRound} 轮 (判断)`;
+                } else {
+                    nBackMessageDisplay.textContent = `第 ${nBackCurrentRound} 轮 (观察)`;
+                }
+                
+                // Schedule next item or end game
+                if (nBackGameActive) { // Check again, state might have changed
+                    if (nBackCurrentRound <= nBackRounds) {
+                        nBackScheduleNextItem();
+                    } else { // All rounds completed
+                        nBackEndGame();
+                    }
+                }
+            }, NBACK_FLASH_DURATION);
+        }
+
+        function nBackHandleButtonClick(userPressedMatch) {
+            if (!nBackGameActive || !nBackAwaitingResponse || nBackCurrentRound <= nBackNValue) {
+                return;
+            }
+
+            const currentItem = nBackSequence[nBackCurrentRound - 1];
+            const nBackComparisonItem = nBackSequence[nBackCurrentRound - 1 - nBackNValue];
+            const actualMatch = (currentItem === nBackComparisonItem);
+
+            if (userPressedMatch === actualMatch) {
+                nBackCorrectCount++;
+                (userPressedMatch ? nBackMatchButton : nBackNoMatchButton).classList.add('correct');
+            } else {
+                (userPressedMatch ? nBackMatchButton : nBackNoMatchButton).classList.add('incorrect');
+            }
+            nBackAwaitingResponse = false;
+        }
+
+        function nBackEndGame() {
+            nBackGameActive = false; // Set game to inactive *first*
+            if (nBackItemDisplayTimeoutId) {
+                clearTimeout(nBackItemDisplayTimeoutId);
+                nBackItemDisplayTimeoutId = null;
+            }
+            nBackStopTimer();
+
+            nBackStartButton.disabled = false;
+            nBackMatchButton.disabled = true;
+            nBackNoMatchButton.disabled = true;
+            nBackAwaitingResponse = false;
+
+            const totalTime = (nBackStartTime ? (Date.now() - nBackStartTime) : 0) / 1000;
+            const evaluableRounds = Math.max(0, nBackRounds - nBackNValue);
+            const accuracy = evaluableRounds > 0 ? (nBackCorrectCount / evaluableRounds) * 100 : 0;
+            // Ensure nBackMessageDisplay is updated only once at the very end
+            if (nBackMessageDisplay.textContent.startsWith("N-Back 完成！")) return; // Avoid multiple end messages if called again
+            nBackMessageDisplay.textContent = `N-Back 完成！正确率: ${accuracy.toFixed(0)}% (${nBackCorrectCount}/${evaluableRounds}) 用时: ${totalTime.toFixed(2)} 秒`;
+        }
+
+        function nBackUpdateTimerDisplay() {
+            if (!nBackStartTime || !nBackGameActive) return;
+            const elapsedTime = Date.now() - nBackStartTime;
+            nBackTimerDisplay.textContent = formatTime(elapsedTime);
+        }
+        function nBackStopTimer() {
+            if (nBackTimerInterval) {
+                clearInterval(nBackTimerInterval);
+                nBackTimerInterval = null;
+            }
+        }
+
+        function nBackResetGameFlags() {
+            nBackStopTimer();
+            if (nBackItemDisplayTimeoutId) {
+                clearTimeout(nBackItemDisplayTimeoutId);
+                nBackItemDisplayTimeoutId = null;
+            }
+
+            nBackSequence = [];
+            nBackCurrentRound = 0;
+            nBackCorrectCount = 0;
+            nBackTimerDisplay.textContent = '00:00.00';
+            nBackDisplayItem.textContent = '';
+            nBackMatchButton.classList.remove('correct', 'incorrect');
+            nBackNoMatchButton.classList.remove('correct', 'incorrect');
+            nBackStartTime = null;
+        }
+
+        function nBackResetGame() {
+            nBackResetGameFlags(); // Resets timers and game variables
+            nBackGameActive = false; // Ensure game is marked as inactive
+            nBackAwaitingResponse = false;
+            nBackStartButton.disabled = false;
+            nBackMatchButton.disabled = true;
+            nBackNoMatchButton.disabled = true;
+            const selectedNText = nBackNValueSelect.options[nBackNValueSelect.selectedIndex].text;
+            nBackMessageDisplay.textContent = `点击 '开始 N-Back' (${selectedNText})...`;
+        }
+        // Event listeners are outside this partial snippet
+        nBackStartButton.addEventListener('click',nBackStartGame);
+        nBackMatchButton.addEventListener('click',()=>nBackHandleButtonClick(true));
+        nBackNoMatchButton.addEventListener('click',()=>nBackHandleButtonClick(false));
+
+
+
+
+
+        // --- Visual Search ---
+        const vsTD=document.getElementById('visualSearch-timer'),vsTaD=document.getElementById('visualSearch-target-display'),vsGC=document.getElementById('visualSearch-grid-container'),vsSB=document.getElementById('visualSearchStartButton'),vsMD=document.getElementById('visualSearch-message'),vsDS=document.getElementById('visualSearchDifficultySelect');
+        let vsGA=false,vsST,vsTI,vsTC='',vsTIdxs=[],vsFC=0,vsIC=0,vsDiff=vsDS.value;
+        const VS_ALPHA='ABCDEFGHIJKLMNOPQRSTUVWXYZ'; const VS_SIMILAR={'E':['F','L','T','I'],'O':['C','G','Q','D'],'B':['P','R'],'A':['H','M','N'],'V':['U','W','Y'],'K':['X'],'S':['Z','5'],'I':['L','T','J'],'P':['R','B','F']};
+        const VS_DIFF_SETTINGS={'easy':{gridSize:6,minT:3,maxT:5,dT:'random'},'medium':{gridSize:8,minT:6,maxT:9,dT:'random'},'hard':{gridSize:8,minT:8,maxT:12,dT:'similar'}}; // Hard gridSize 8x8
+        vsDS.addEventListener('change',()=>{vsDiff=vsDS.value;vsResetGame();});
+        function vsGenerateGrid(){vsGC.innerHTML='';const s=VS_DIFF_SETTINGS[vsDiff];const cGS=s.gridSize;const totC=cGS*cGS;vsGC.style.gridTemplateColumns=`repeat(${cGS},1fr)`;vsGC.style.gridTemplateRows=`repeat(${cGS},1fr)`;const ceFS=Math.max(0.8,2-(cGS-5)*0.2);vsTC=VS_ALPHA[Math.floor(Math.random()*VS_ALPHA.length)];vsTaD.textContent=`目标: ${vsTC}`;const chars=[];vsTIdxs=[];const nT=Math.floor(Math.random()*(s.maxT-s.minT+1))+s.minT;const allIdx=Array.from({length:totC},(_,i)=>i);shuffleArray(allIdx);const tPos=allIdx.slice(0,nT);for(let i=0;i<totC;i++){let ch;if(tPos.includes(i)){ch=vsTC;vsTIdxs.push(i);}else{if(s.dT==='similar'&&VS_SIMILAR[vsTC]){const sim=VS_SIMILAR[vsTC];ch=sim[Math.floor(Math.random()*sim.length)];}else{do{ch=VS_ALPHA[Math.floor(Math.random()*VS_ALPHA.length)];}while(ch===vsTC);}}chars.push(ch);}chars.forEach((ch,idx)=>{const cell=document.createElement('div');cell.classList.add('grid-cell','visual-search-cell');cell.style.fontSize=`${ceFS}rem`;cell.textContent=ch;cell.dataset.index=idx;cell.dataset.char=ch;cell.addEventListener('click',vsHandleCellClick);vsGC.appendChild(cell);});}
+        function vsStartGame(){if(vsGA)return;vsResetGameFlags();vsGA=true;vsSB.disabled=true;vsMD.textContent='找到所有目标字符！';vsST=Date.now();vsTI=setInterval(vsUpdateTimerDisplay,10);vsGenerateGrid();}
+        function vsHandleCellClick(e){if(!vsGA)return;const clC=e.target;const clCh=clC.dataset.char;if(clC.classList.contains('found'))return;if(clCh===vsTC){clC.classList.add('found');vsFC++;vsMD.textContent=`找到 ${vsFC}/${vsTIdxs.length} | 错误点击: ${vsIC}`;if(vsFC===vsTIdxs.length){vsEndGame(true);}}else{vsIC++;clC.classList.add('incorrect-click');setTimeout(()=>clC.classList.remove('incorrect-click'),300);vsMD.textContent=`找到 ${vsFC}/${vsTIdxs.length} | 错误点击: ${vsIC}`;}}
+        function vsEndGame(comp){vsStopTimer();vsGA=false;vsSB.disabled=false;const tT=(Date.now()-vsST)/1000;let errR=0;const totI=vsFC+vsIC;if(totI>0){errR=(vsIC/totI)*100;}if(comp){vsMD.textContent=`恭喜！找到所有 ${vsTIdxs.length} 个目标！用时: ${tT.toFixed(2)} 秒. 错误点击: ${vsIC}. 错误率: ${errR.toFixed(1)}%`;}else{Array.from(vsGC.children).forEach(c=>{if(vsTIdxs.includes(parseInt(c.dataset.index))&&!c.classList.contains('found')){c.classList.add('missed');}});vsMD.textContent=`游戏结束. 找到 ${vsFC}/${vsTIdxs.length}. 用时: ${tT.toFixed(2)} 秒. 错误点击: ${vsIC}. 错误率: ${errR.toFixed(1)}%`;}}
+        function vsUpdateTimerDisplay(){vsTD.textContent=formatTime(Date.now()-vsST);} function vsStopTimer(){clearInterval(vsTI);}
+        function vsResetGameFlags(){vsStopTimer();vsTC='';vsTIdxs=[];vsFC=0;vsIC=0;vsTD.textContent='00:00.00';}
+        function vsResetGame(){vsResetGameFlags();vsGA=false;vsSB.disabled=false;vsTaD.textContent='目标: ?';vsMD.textContent="点击 '开始视觉搜索' 按钮...";vsGC.innerHTML='';vsGenerateGrid();}
+        vsSB.addEventListener('click',vsStartGame);
+
+        // --- Initial Setup ---
+        document.addEventListener('DOMContentLoaded',()=>{schulteResetGame();memoryResetGame();stroopResetGame();nBackResetGame();vsResetGame();gameModeSelect.value='schulte';switchMode('schulte');});
+    </script>
+</body>
+</html>
