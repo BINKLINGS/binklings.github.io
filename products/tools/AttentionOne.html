@@ -1,0 +1,677 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>注意力水平测试</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #1a202c; /* Deep dark background */
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            margin: 0;
+            padding: 0.5rem; /* Reduced padding for full screen feel */
+            box-sizing: border-box;
+            color: #e2e8f0; /* Light text color for general elements */
+        }
+        .container {
+            background-color: #2d3748; /* Slightly lighter dark background for container */
+            border-radius: 1rem;
+            box-shadow: 0 8px 20px rgba(0, 0, 0, 0.3);
+            padding: 1.5rem;
+            text-align: center;
+            max-width: 95%;
+            width: 100%;
+            display: flex;
+            flex-direction: column;
+            gap: 1rem;
+            flex-grow: 1;
+            justify-content: center;
+        }
+
+        .globally-hidden { display: none !important; }
+
+        /* Game Mode Containers */
+        .game-mode { display: flex; flex-direction: column; align-items: center; gap: 1rem; width: 100%; }
+        .game-mode.hidden { display: none; }
+
+        /* Common Grid Styles */
+        .grid-container { display: grid; gap: 0.125rem; width: 100%; aspect-ratio: 1 / 1; margin: 0 auto; max-width: 600px; position: relative; }
+        .memory-grid-wrapper { position: relative; overflow: hidden; max-width: 600px; width: 100%; aspect-ratio: 1 / 1; margin: 0 auto; border: 1px solid #64748b; border-radius: 0.25rem; }
+        .memory-grid-container-actual { position: absolute; top: 0; left: 0; width: 100%; height: 100%; display: grid; gap: 0.125rem; transform: translateX(0); padding:0; }
+
+        .grid-cell { background-color: #4a5568; border-radius: 0.25rem; display: flex; justify-content: center; align-items: center; font-size: 2rem; font-weight: 600; color: #e2e8f0; cursor: pointer; user-select: none; transition: background-color 0.2s ease, transform 0.1s ease; box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.2); }
+        .grid-cell:hover { background-color: #64748b; transform: translateY(-1px); }
+        .grid-cell.correct { /* Schulte correct feedback */
+            background-color: #34d399; 
+            color: #064e3b; 
+            pointer-events: none; /* Optional: prevent re-clicking correct cells */
+        }
+        .grid-cell.incorrect { background-color: #ef4444; color: #450a0a; animation: shake 0.3s ease-in-out; } /* Schulte incorrect feedback */
+        @keyframes shake { 0% { transform: translateX(0); } 25% { transform: translateX(-5px); } 50% { transform: translateX(5px); } 75% { transform: translateX(-5px); } 100% { transform: translateX(0); } }
+
+        /* Timer and Button Styles */
+        .timer-display { font-size: 2rem; font-weight: 700; color: #f8fafc; margin-bottom: 1rem; min-height: 2.5rem; }
+        .button { background-color: #3b82f6; color: white; padding: 0.75rem 1.5rem; border-radius: 0.75rem; font-weight: 600; cursor: pointer; transition: background-color 0.2s ease, transform 0.1s ease, box-shadow 0.2s ease; box-shadow: 0 4px 10px rgba(59, 130, 246, 0.3); border: none; outline: none; }
+        .button:hover { background-color: #2563eb; transform: translateY(-1px); box-shadow: 0 6px 15px rgba(59, 130, 246, 0.4); }
+        .button:active { transform: translateY(0); box-shadow: 0 2px 5px rgba(59, 130, 246, 0.2); }
+        .button:disabled { background-color: #6b7280; cursor: not-allowed; box-shadow: none; }
+
+        /* Message Display */
+        .message { font-size: 1.1rem; color: #a0aec0; min-height: 1.5rem; }
+
+        /* Memory Matrix Specific Styles */
+        .memory-cell.highlight { background-color: #f6e05e; color: #744210; } /* For reveal phase */
+        .memory-cell.selected-by-user { background-color: #64748b; } /* Neutral visual for user click, no correct/incorrect */
+        .countdown-display { font-size: 5rem; font-weight: 900; color: #f8fafc; position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); z-index: 10; text-shadow: 0 0 15px rgba(0,0,0,0.8); }
+        .countdown-display.small { font-size: 2.5rem; bottom: 15%; top: auto; transform: translate(-50%, 0); }
+
+        /* Stroop Effect Specific Styles */
+        .stroop-word { font-size: 4rem; font-weight: 700; margin-bottom: 1rem; text-shadow: 0 0 10px rgba(0,0,0,0.5); }
+        .stroop-options { display: flex; flex-wrap: wrap; justify-content: center; gap: 0.75rem; margin-top: 1rem; }
+        .stroop-color-button { padding: 0.8rem 1.8rem; border-radius: 0.75rem; font-size: 1.2rem; font-weight: 600; cursor: pointer; transition: transform 0.1s ease, box-shadow 0.2s ease, background-color 0.2s ease, color 0.2s ease; border: none; outline: none; background-color: #4a5568; box-shadow: 0 4px 10px rgba(0,0,0,0.2); }
+        .stroop-color-button:hover { transform: translateY(-2px); background-color: #64748b; box-shadow: 0 6px 15px rgba(0,0,0,0.3); }
+
+        /* N-Back Task Specific Styles */
+        .nback-display-item { font-size: 6rem; font-weight: 900; color: #f8fafc; min-height: 6rem; display: flex; justify-content: center; align-items: center; margin-bottom: 1rem; }
+        .nback-controls { display: flex; gap: 1rem; margin-top: 1rem; }
+
+        /* Block Count Specific Styles */
+        .blockCount-svg-container { width: 100%; max-width: 500px; aspect-ratio: 1 / 0.8; margin: 0 auto; border: 1px solid #64748b; border-radius: 0.25rem; background-color: #394251; position: relative; overflow: hidden; }
+        #blockCount-svg { display: block; width: 100%; height: 100%; }
+        #blockCount-svg-group { transform: translate(0,0); }
+        .blockCount-numpad { display: grid; grid-template-columns: repeat(3, 1fr); gap: 0.5rem; width: 100%; max-width: 250px; margin: 1rem auto 0; }
+        .blockCount-numpad button { background-color: #4a5568; color: #e2e8f0; padding: 0.8rem; border-radius: 0.5rem; font-size: 1.2rem; font-weight: 600; cursor: pointer; border: none; transition: background-color 0.2s ease, transform 0.1s ease; }
+        .blockCount-numpad button:hover { background-color: #64748b; transform: translateY(-1px); }
+        .blockCount-input-display { grid-column: 1 / -1; background-color: #1a202c; color: #f8fafc; padding: 0.5rem; border-radius: 0.375rem; min-height: 2.5rem; font-size: 1.5rem; text-align: right; margin-bottom: 0.5rem; border: 1px solid #64748b; }
+
+        /* Final Report Styles */
+        #final-report { text-align: left; padding: 1.5rem; background-color: #2d3748; border-radius: 1rem; color: #e2e8f0;}
+        #final-report h2, #final-report h3, #final-report h4 { color: #f8fafc; margin-bottom: 0.5rem; }
+        #final-report h2 { font-size: 1.8rem; text-align: center; margin-bottom: 1rem; }
+        #final-report h3 { font-size: 1.5rem; }
+        #final-report h4 { font-size: 1.2rem; margin-top: 1rem; }
+        #final-report p { margin-bottom: 0.25rem; color: #cbd5e1; }
+        #final-report hr { border-color: #4a5568; margin: 1.2rem 0; }
+        #final-report .button { margin-top: 1.5rem; display: block; margin-left: auto; margin-right: auto; }
+
+
+        @media (max-width: 640px) {
+            .container { padding: 1rem; gap: 0.75rem; }
+            .grid-cell { font-size: 1.6rem; }
+            .timer-display { font-size: 1.8rem; min-height: 2.2rem; }
+            .button { padding: 0.6rem 1.2rem; font-size: 0.9rem; }
+            .stroop-word { font-size: 3rem; }
+            .nback-display-item { font-size: 4rem; }
+            .blockCount-svg-container { max-width: 400px; }
+            .countdown-display { font-size: 3.5rem; }
+             #final-report h2 { font-size: 1.5rem; }
+            #final-report h3 { font-size: 1.3rem; }
+            #final-report h4 { font-size: 1.1rem; }
+        }
+         @media (max-width: 480px) {
+            .grid-cell { font-size: 1.4rem; }
+             .timer-display { font-size: 1.5rem; min-height: 2rem; }
+            .stroop-word { font-size: 2.5rem; }
+            .nback-display-item { font-size: 3rem; }
+            .blockCount-svg-container { max-width: 320px; }
+             .countdown-display { font-size: 3rem; }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div id="initial-screen">
+            <h1 class="text-3xl font-bold mb-4 text-slate-100">注意力测试</h1>
+            <p class="mb-6 text-slate-300">集中90秒左右注意力完成测试<br>舒尔特方格：按顺序快速点击数字1-25<br>记忆矩阵：快速记住高亮的方格并选出<br>斯特鲁普效应：选择大字的实际颜色所匹配的描述的颜色的选项<br>3-Back：判断当前字母与3次前出现的字母是否相同<br>方块数量记忆：记住方块数量</p>
+            <button id="startOverallTestButton" class="button">开始测试</button>
+        </div>
+
+        <div id="schulte-mode" class="game-mode hidden">
+            <div id="schulte-timer" class="timer-display globally-hidden">00:00.00</div>
+            <div id="schulte-grid-container" class="grid-container"></div>
+            <button id="schulteResetButton" class="button mt-4 globally-hidden">重新开始</button>
+            <div id="schulte-message" class="message">请按顺序点击数字，从 '1' 开始。</div>
+        </div>
+
+        <div id="memory-mode" class="game-mode hidden">
+            <div id="memory-level-display" class="message" style="display: none;">级别: 1</div>
+            <div id="memory-timer" class="timer-display globally-hidden">00:00.00</div>
+            <div id="memory-countdown" class="countdown-display hidden"></div>
+            <div class="memory-grid-wrapper">
+                <div id="memory-grid-container-actual" class="memory-grid-container-actual"></div>
+            </div>
+            <button id="memoryStartButton" class="button mt-4 globally-hidden">开始记忆训练</button>
+            <div id="memory-message" class="message">准备记忆...</div>
+        </div>
+
+        <div id="stroop-mode" class="game-mode hidden">
+            <div id="stroop-timer" class="timer-display globally-hidden">00:00.00</div>
+            <div id="stroop-word-display" class="stroop-word"></div>
+            <div id="stroop-options" class="stroop-options"></div>
+            <button id="stroopStartButton" class="button mt-4 globally-hidden">开始斯特鲁普</button>
+            <div id="stroop-message" class="message">请选择【大字实际墨水颜色】对应的【下方文字按钮】。</div>
+        </div>
+
+        <div id="nback-mode" class="game-mode hidden">
+            <div id="nback-round-display" class="message" style="display: none;">轮次: 1/15</div>
+            <div id="nback-timer" class="timer-display globally-hidden">00:00.00</div>
+            <div id="nback-display-item" class="nback-display-item"></div>
+            <div class="nback-controls">
+                <button id="nbackMatchButton" class="button">匹配</button>
+                <button id="nbackNoMatchButton" class="button">不匹配</button>
+            </div>
+            <button id="nbackStartButton" class="button mt-4 globally-hidden">开始 N-Back</button>
+            <div id="nback-message" class="message">观察出现的字母。</div>
+        </div>
+
+        <div id="blockCount-mode" class="game-mode hidden">
+            <div id="blockCount-level-display" class="message" style="display: none;">级别: 1</div>
+            <div id="blockCount-score-display" class="timer-display globally-hidden">正确率 0/0</div>
+            <div id="blockCount-svg-container" class="blockCount-svg-container">
+                <svg id="blockCount-svg" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 320"></svg>
+                 <div id="blockCount-round-countdown" class="countdown-display small hidden"></div>
+            </div>
+            <div id="blockCount-numpad" class="blockCount-numpad hidden">
+                <div id="blockCount-input-display" class="blockCount-input-display"></div>
+                <button data-key="7">7</button><button data-key="8">8</button><button data-key="9">9</button>
+                <button data-key="4">4</button><button data-key="5">5</button><button data-key="6">6</button>
+                <button data-key="1">1</button><button data-key="2">2</button><button data-key="3">3</button>
+                <button data-key="C">C</button><button data-key="0">0</button><button data-key="Del">Del</button>
+            </div>
+            <button id="blockCountStartButton" class="button mt-4 globally-hidden">开始方块记忆</button>
+            <div id="blockCount-message" class="message">准备记忆...</div>
+        </div>
+
+        <div id="final-report" class="game-mode hidden" style="text-align: left; padding: 2rem;">
+            <div id="overall-score-section">
+                <h2>注意力分数: <span id="report-overall-score" class="font-bold"></span><br><span id="report-attention-level" class="font-bold"></span></h2>
+            </div>
+            <hr>
+            <div id="schulte-results">
+                <h4>舒尔特方格 (5x5)</h4>
+                <p>用时: <span id="report-schulte-time"></span> 秒</p>
+            </div>
+            <hr>
+            <div id="memory-results">
+                <h4>记忆矩阵</h4>
+                <p>梯度: <span id="report-memory-level"></span> / 5</p>
+                <p>总用时: <span id="report-memory-time"></span> 秒</p>
+            </div>
+            <hr>
+            <div id="stroop-results">
+                <h4>斯特鲁普效应 (5轮)</h4>
+                <p>正确率: <span id="report-stroop-accuracy"></span>%</p>
+                <p>总用时: <span id="report-stroop-time"></span> 秒</p>
+            </div>
+            <hr>
+            <div id="nback-results">
+                <h4>3-Back (2-Back, 15轮)</h4>
+                <p>正确率: <span id="report-nback-accuracy"></span>%</p>
+                <p>总用时: <span id="report-nback-time"></span> 秒</p>
+            </div>
+            <hr>
+            <div id="blockcount-results">
+                <h4>方块数量记忆</h4>
+                <p>梯度: <span id="report-blockcount-level"></span> / 7</p>
+                <p>总用时: <span id="report-blockcount-time"></span> 秒</p>
+            </div>
+            <button id="restartOverallTestButton" class="button">重新测试</button>
+        </div>
+
+    </div>
+
+    <script>
+        // --- Global Variables and Utility Functions ---
+        let currentTestIndex = 0;
+        const testSequence = ['schulte', 'memory', 'stroop', 'nback', 'blockCount'];
+        let testResults = {};
+        let overallTestActive = false;
+        let overallStartTime;
+
+
+        function formatTime(ms) { const m = Math.floor(ms/60000), s = Math.floor((ms%60000)/1000), d = Math.floor((ms%1000)/10); return `${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')}.${String(d).padStart(2,'0')}`; }
+        function shuffleArray(arr) { for (let i=arr.length-1; i>0; i--) { const j=Math.floor(Math.random()*(i+1)); [arr[i],arr[j]]=[arr[j],arr[i]]; }}
+
+        const allGameModeDivs = document.querySelectorAll('.game-mode');
+        const initialScreenDiv = document.getElementById('initial-screen');
+        const startOverallTestButton = document.getElementById('startOverallTestButton');
+        const finalReportDiv = document.getElementById('final-report');
+        const restartOverallTestButton = document.getElementById('restartOverallTestButton');
+
+        startOverallTestButton.addEventListener('click', startOverallAttentionTest);
+        restartOverallTestButton.addEventListener('click', startOverallAttentionTest);
+
+
+        function startOverallAttentionTest() {
+            initialScreenDiv.classList.add('hidden');
+            finalReportDiv.classList.add('hidden');
+            allGameModeDivs.forEach(div => div.classList.add('hidden'));
+
+            currentTestIndex = 0;
+            testResults = {};
+            overallTestActive = true;
+            overallStartTime = Date.now();
+            
+            schulteResetGame(true); 
+            memoryResetGame(true);
+            stroopResetGame(true);
+            nBackResetGame(true);
+            blockCountResetGame(true);
+            
+            proceedToNextTest();
+        }
+
+        function proceedToNextTest() {
+            if (currentTestIndex < testSequence.length) {
+                const nextTestName = testSequence[currentTestIndex];
+                allGameModeDivs.forEach(div => div.classList.add('hidden'));
+                document.getElementById(`${nextTestName}-mode`).classList.remove('hidden');
+
+                document.querySelectorAll('.message').forEach(m => m.classList.add('globally-hidden'));
+                const currentMessageEl = document.getElementById(`${nextTestName}-message`);
+                if (currentMessageEl) currentMessageEl.classList.remove('globally-hidden');
+                
+                const levelDisplayEl = document.getElementById(`${nextTestName}-level-display`); // For memory and blockcount
+                if(levelDisplayEl) levelDisplayEl.classList.remove('globally-hidden');
+
+
+                if (nextTestName === 'schulte') schulteStartGameForTest();
+                else if (nextTestName === 'memory') memoryStartGameForTest();
+                else if (nextTestName === 'stroop') stroopStartGameForTest();
+                else if (nextTestName === 'nback') nBackStartGameForTest();
+                else if (nextTestName === 'blockCount') blockCountStartGameForTest();
+            } else {
+                overallTestActive = false;
+                generateFinalReport();
+            }
+        }
+        
+        function completeCurrentTestAndProceed(testName, results) {
+            testResults[testName] = results;
+            currentTestIndex++;
+            setTimeout(proceedToNextTest, 300);
+        }
+
+
+        // --- Schulte Grid ---
+        const schulteGC=document.getElementById('schulte-grid-container'), schulteTD=document.getElementById('schulte-timer'), schulteRB=document.getElementById('schulteResetButton'), schulteMD=document.getElementById('schulte-message');
+        let schulteN=[], schulteCN=1, schulteST, schulteTI, schulteGA=false, schulteGS=5, schulteTN=schulteGS*schulteGS; 
+
+        function schulteGenerateGrid(){ schulteGC.innerHTML=''; schulteN=Array.from({length:schulteTN},(_,i)=>i+1); shuffleArray(schulteN); schulteGC.style.gridTemplateColumns=`repeat(${schulteGS},1fr)`; schulteGC.style.gridTemplateRows=`repeat(${schulteGS},1fr)`; const bfS=2, cfS=Math.max(0.8,bfS-(schulteGS-5)*0.2); schulteN.forEach(n=>{const c=document.createElement('div'); c.classList.add('grid-cell'); c.style.fontSize=`${cfS}rem`; c.textContent=n; c.dataset.number=n; c.addEventListener('click',schulteHandleCellClick); schulteGC.appendChild(c);});}
+        function schulteHandleCellClick(e){ 
+            if(!schulteGA)return; 
+            const targetCell = e.target;
+            const clN=parseInt(targetCell.dataset.number); 
+            if(clN===1&&!schulteST){
+                schulteST=Date.now(); 
+                schulteMD.textContent=`找到下一个数字: ${schulteCN+1}`;
+            } 
+            if(!schulteST && clN !== 1){
+                schulteMD.textContent='请先点击数字 "1" 开始！';
+                return;
+            } 
+            if(clN===schulteCN){
+                targetCell.classList.add('correct'); // Keep green feedback
+                schulteCN++; 
+                if(schulteCN<=schulteTN){
+                    schulteMD.textContent=`找到下一个数字: ${schulteCN}`;
+                } else { 
+                    schulteStopTimer(); 
+                    const timeTaken = (Date.now()-schulteST); 
+                    schulteMD.textContent=`完成!`; 
+                    completeCurrentTestAndProceed('schulte', {timeMs: timeTaken}); 
+                    schulteGA=false;
+                }
+            } else if (clN !== schulteCN && schulteST) {
+                targetCell.classList.add('incorrect');
+                setTimeout(()=>targetCell.classList.remove('incorrect'),300);
+                schulteMD.textContent=`错了！请点击数字 ${schulteCN}`;
+            }
+        }
+        function schulteStopTimer(){clearInterval(schulteTI);}
+        function schulteResetGame(isTestMode = false){schulteStopTimer();schulteCN=1;schulteGA=false; schulteST=null; schulteTD.textContent='00:00.00'; schulteMD.textContent="点击数字 '1' 开始计时"; schulteGenerateGrid(); if(isTestMode) { schulteTD.classList.add('globally-hidden'); schulteRB.classList.add('globally-hidden'); }}
+        function schulteStartGameForTest() { schulteResetGame(true); schulteGA = true; schulteMD.textContent = "请按顺序点击数字，从 '1' 开始。"; }
+
+
+        // --- Memory Matrix (Test Mode) ---
+        const memoryGCA=document.getElementById('memory-grid-container-actual'), memoryTD_memory_el=document.getElementById('memory-timer'), memorySB=document.getElementById('memoryStartButton'), memoryMD_memory=document.getElementById('memory-message'), memoryCD=document.getElementById('memory-countdown'), memoryLvlDisp = document.getElementById('memory-level-display');
+        let memoryHC=[], memoryCC=[], memoryGA_memory=false, memoryAR=false, memoryST_trial, memoryTI_memory, memoryRevealTimeout, memoryNextRoundTimeout_memory, memoryCI_memory;
+        const MEMORY_GRID_SIZE_CONST_TEST = 5; 
+        const MEMORY_LEVEL_SETTINGS = [ // Adjusted reveal times
+            {level: 1, items: 3, revealTime: 2000},
+            {level: 2, items: 5, revealTime: 1000},
+            {level: 3, items: 7, revealTime: 800},
+            {level: 4, items: 10, revealTime: 600},
+            {level: 5, items: 14, revealTime: 500} 
+        ];
+        let memoryCurrentLevelIdx = 0;
+        let memoryConsecutiveFails = 0;
+        let memoryTotalTimeThisTest = 0;
+        let memoryTestStartTime;
+
+        function memoryGenerateGridForTest(){ memoryGCA.innerHTML=''; memoryGCA.style.gridTemplateColumns=`repeat(${MEMORY_GRID_SIZE_CONST_TEST},1fr)`; memoryGCA.style.gridTemplateRows=`repeat(${MEMORY_GRID_SIZE_CONST_TEST},1fr)`; const fS='1.5rem'; for(let i=0;i<MEMORY_GRID_SIZE_CONST_TEST*MEMORY_GRID_SIZE_CONST_TEST;i++){const c=document.createElement('div');c.classList.add('grid-cell','memory-cell');c.dataset.index=i;c.style.fontSize=fS;c.addEventListener('click',memoryHandleCellClickForTest);memoryGCA.appendChild(c);}}
+        function memoryStartGameForTest(){ memoryResetGame(true); memoryTestStartTime = Date.now(); memoryGA_memory=true; memoryCurrentLevelIdx = 0; memoryConsecutiveFails = 0; memoryTotalTimeThisTest = 0; memorySB.disabled=true; memoryCD.classList.add('hidden'); memoryStartNextMemoryTrial(); }
+        function memoryStartNextMemoryTrial() {
+            if (!memoryGA_memory) return;
+            if (memoryCurrentLevelIdx >= MEMORY_LEVEL_SETTINGS.length || memoryConsecutiveFails >= 2) {
+                memoryEndTest(); return;
+            }
+            memoryLvlDisp.textContent = `级别: ${MEMORY_LEVEL_SETTINGS[memoryCurrentLevelIdx].level}`;
+            memoryMD_memory.textContent='观察方块'; // Neutral message
+            memoryCC = []; memoryAR = false;
+            Array.from(memoryGCA.children).forEach(c=>c.classList.remove('highlight','selected-by-user')); 
+
+            let cd=1; 
+            memoryCD.textContent=cd; memoryCD.classList.remove('hidden');
+            memoryCI_memory=setInterval(()=>{cd--; if(cd>0){memoryCD.textContent=cd;}else{clearInterval(memoryCI_memory);memoryCD.classList.add('hidden');memoryRevealPatternForTest();}},500);
+        }
+        function memoryRevealPatternForTest(){
+            const currentLevelSetting = MEMORY_LEVEL_SETTINGS[memoryCurrentLevelIdx];
+            // memoryMD_memory.textContent='记住高亮方格...'; // Already set or neutral
+            const allCI=Array.from({length:MEMORY_GRID_SIZE_CONST_TEST*MEMORY_GRID_SIZE_CONST_TEST},(_,i)=>i); shuffleArray(allCI); memoryHC=allCI.slice(0,currentLevelSetting.items);
+            memoryHC.forEach(i=>{memoryGCA.children[i].classList.add('highlight');});
+            memoryRevealTimeout=setTimeout(()=>{
+                memoryHC.forEach(i=>{if(memoryGCA.children[i])memoryGCA.children[i].classList.remove('highlight');});
+                memoryMD_memory.textContent='请点击您记住的方格。'; memoryAR=true; memoryST_trial=Date.now();
+            },currentLevelSetting.revealTime);
+        }
+        function memoryHandleCellClickForTest(e){
+            if(!memoryGA_memory||!memoryAR)return;
+            const clickedCell = e.target;
+            const cI=parseInt(clickedCell.dataset.index);
+            
+            if(memoryCC.includes(cI) || clickedCell.classList.contains('selected-by-user')) return;
+            
+            memoryCC.push(cI);
+            clickedCell.classList.add('selected-by-user'); // Neutral visual cue for selection
+
+            const correctSelectionsSoFar = memoryCC.filter(idx => memoryHC.includes(idx)).length;
+            
+            if (memoryCC.length === memoryHC.length) { 
+                memoryAR = false; 
+                let trialCorrect = true;
+                if (correctSelectionsSoFar !== memoryHC.length) {
+                    trialCorrect = false; 
+                }
+                memoryCC.forEach(selIdx => { 
+                    if (!memoryHC.includes(selIdx)) trialCorrect = false;
+                });
+
+                if (trialCorrect) {
+                    // memoryMD_memory.textContent = "正确记忆!"; // NO FEEDBACK
+                    memoryCurrentLevelIdx++;
+                    memoryConsecutiveFails = 0;
+                } else {
+                    // memoryMD_memory.textContent = "记忆有误。"; // NO FEEDBACK
+                    memoryConsecutiveFails++;
+                }
+                setTimeout(() => {
+                     Array.from(memoryGCA.children).forEach(c=>c.classList.remove('selected-by-user'));
+                     memoryMD_memory.textContent = '准备下一轮...'; // Neutral transition
+                     memoryStartNextMemoryTrial();
+                }, 300); // Shorter pause, no feedback to wait for
+            }
+        }
+        function memoryEndTest() {
+            memoryGA_memory = false; memoryStopTimer_memory();
+            memoryTotalTimeThisTest = Date.now() - memoryTestStartTime;
+            let achievedLevel = 0;
+            
+            if (memoryCurrentLevelIdx >= MEMORY_LEVEL_SETTINGS.length) { // Completed all levels
+                achievedLevel = MEMORY_LEVEL_SETTINGS[MEMORY_LEVEL_SETTINGS.length - 1].level;
+            } else if (memoryConsecutiveFails >= 2) { // Stopped due to fails
+                 achievedLevel = memoryCurrentLevelIdx > 0 ? MEMORY_LEVEL_SETTINGS[memoryCurrentLevelIdx-1].level : 0;
+            } else { // Should ideally not be reached if other conditions cover it. Fallback.
+                 achievedLevel = memoryCurrentLevelIdx > 0 ? MEMORY_LEVEL_SETTINGS[memoryCurrentLevelIdx-1].level : 0;
+            }
+            
+            memoryMD_memory.textContent = "记忆矩阵测试结束。";
+            completeCurrentTestAndProceed('memory', { level: achievedLevel, timeMs: memoryTotalTimeThisTest });
+        }
+        function memoryStopTimer_memory(){clearTimeout(memoryRevealTimeout); clearTimeout(memoryNextRoundTimeout_memory); clearInterval(memoryCI_memory); clearInterval(memoryTI_memory);}
+        function memoryResetGame(isTestMode = false){ memoryStopTimer_memory(); memoryGA_memory=false; memoryAR=false;memoryHC=[];memoryCC=[];memoryTD_memory_el.textContent='00:00.00';memoryST_trial=null; memoryGenerateGridForTest(); memoryCD.classList.add('hidden'); if(isTestMode){ memoryTD_memory_el.classList.add('globally-hidden'); memorySB.classList.add('globally-hidden'); memoryLvlDisp.classList.remove('globally-hidden');}}
+
+        // --- Stroop Effect (Test Mode) ---
+        const stroopTD=document.getElementById('stroop-timer'), stroopWD=document.getElementById('stroop-word-display'), stroopOC=document.getElementById('stroop-options'), stroopSB_stroop=document.getElementById('stroopStartButton'), stroopMD_stroop=document.getElementById('stroop-message');
+        const STROOP_WORDS_LIST=['红','蓝','绿','黄'], STROOP_CSS_COLORS_LIST=['red','skyblue','lightgreen','yellow'];
+        const STROOP_WORD_TO_CSS={'红':'red','蓝':'skyblue','绿':'lightgreen','黄':'yellow'}; const STROOP_CSS_TO_WORD={'red':'红','skyblue':'蓝','lightgreen':'绿','yellow':'黄'};
+        let stroopGA_stroop=false, stroopST_stroop, stroopTI_stroop, stroopCurrentWordInkCSS, stroopCorrectC_stroop=0, stroopTotalA_stroop=0;
+        const STROOP_ROUNDS_FOR_TEST=5;
+
+        function stroopGenerateButtonsForTest(){ stroopOC.innerHTML=''; let buttonTextWords=[...STROOP_WORDS_LIST]; shuffleArray(buttonTextWords); let buttonInkCssColors=[...STROOP_CSS_COLORS_LIST]; shuffleArray(buttonInkCssColors); for(let i=0;i<buttonTextWords.length;i++){ const btnWord=buttonTextWords[i]; let inkCss=buttonInkCssColors[i]; if(STROOP_WORD_TO_CSS[btnWord]===inkCss){inkCss=buttonInkCssColors[(i+1)%buttonInkCssColors.length]; if(STROOP_WORD_TO_CSS[btnWord]===inkCss){const oI=STROOP_CSS_COLORS_LIST.filter(c=>c!==STROOP_WORD_TO_CSS[btnWord]); if(oI.length>0)inkCss=oI[0];else inkCss=STROOP_CSS_COLORS_LIST[0];}} const b=document.createElement('button');b.classList.add('stroop-color-button');b.textContent=btnWord;b.dataset.wordText=btnWord;b.style.color=inkCss;b.addEventListener('click',stroopHandleColorClickForTest);stroopOC.appendChild(b);}}
+        function stroopGenerateTestItem(){ const centralWordText=STROOP_WORDS_LIST[Math.floor(Math.random()*STROOP_WORDS_LIST.length)]; let centralWordInkCssList=STROOP_CSS_COLORS_LIST.filter(c=>c!==STROOP_WORD_TO_CSS[centralWordText]); if(centralWordInkCssList.length===0)centralWordInkCssList=STROOP_CSS_COLORS_LIST; stroopCurrentWordInkCSS=centralWordInkCssList[Math.floor(Math.random()*centralWordInkCssList.length)]; stroopWD.textContent=centralWordText; stroopWD.style.color=stroopCurrentWordInkCSS; stroopGenerateButtonsForTest();}
+        function stroopStartGameForTest(){ stroopResetGame(true); stroopGA_stroop=true; stroopSB_stroop.disabled=true; stroopMD_stroop.textContent='请选择【大字实际墨水颜色】对应的【下方文字按钮】。'; stroopST_stroop=Date.now(); stroopGenerateTestItem();}
+        function stroopHandleColorClickForTest(e){
+            if(!stroopGA_stroop)return;
+            const clickedButtonWordText=e.target.dataset.wordText; stroopTotalA_stroop++;
+            const correctButtonWordText=STROOP_CSS_TO_WORD[stroopCurrentWordInkCSS];
+            if(clickedButtonWordText===correctButtonWordText){stroopCorrectC_stroop++;}
+            Array.from(stroopOC.children).forEach(btn=>btn.disabled=true);
+            setTimeout(()=>{
+                Array.from(stroopOC.children).forEach(btn=>btn.disabled=false);
+                if(stroopTotalA_stroop<STROOP_ROUNDS_FOR_TEST){stroopGenerateTestItem(); stroopMD_stroop.textContent=`${stroopTotalA_stroop+1} / ${STROOP_ROUNDS_FOR_TEST}`;}
+                else{ stroopStopTimer_stroop(); const timeTaken=(Date.now()-stroopST_stroop); stroopMD_stroop.textContent=`测试完成!`; stroopGA_stroop=false; completeCurrentTestAndProceed('stroop', {accuracy: (stroopCorrectC_stroop/STROOP_ROUNDS_FOR_TEST)*100, timeMs: timeTaken});}
+            }, 250); 
+        }
+        function stroopStopTimer_stroop(){clearInterval(stroopTI_stroop);}
+        function stroopResetGame(isTestMode = false){ stroopStopTimer_stroop();stroopCorrectC_stroop=0;stroopTotalA_stroop=0;stroopTD.textContent='00:00.00';stroopWD.textContent='';stroopWD.style.color=''; stroopGenerateButtonsForTest(); if(isTestMode){ stroopTD.classList.add('globally-hidden'); stroopSB_stroop.classList.add('globally-hidden');}}
+
+        // --- N-Back Task (Test Mode) ---
+        const nBackTimerDisplay = document.getElementById('nback-timer'), nBackDisplayItem = document.getElementById('nback-display-item'), nBackMatchButton = document.getElementById('nbackMatchButton'), nBackNoMatchButton = document.getElementById('nbackNoMatchButton'), nBackStartButton_nback = document.getElementById('nbackStartButton'), nBackMessageDisplay_nback = document.getElementById('nback-message'), nBackRoundDisp = document.getElementById('nback-round-display');
+        const NBACK_N_VALUE_FOR_TEST = 3; const NBACK_ROUNDS_FOR_TEST = 15;
+        let nBackSequence = [], nBackCurrentRound_nback = 0, nBackGameActive_nback = false, nBackAwaitingResponse = false, nBackStartTime_nback, nBackTimerInterval_nback, nBackItemDisplayTimeoutId, nBackCorrectCount_nback = 0;
+        const NBACK_ITEMS_LIST = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ'.split('');
+        const NBACK_TARGET_MATCH_PROBABILITY_FOR_TEST = 0.50;
+        const NBACK_FLASH_DURATION = 100;
+        const NBACK_BASE_INTERVAL = 2000, NBACK_DECREMENT_PER_ROUND = 100, NBACK_MIN_INTERVAL = 600, NBACK_RANDOM_JITTER = 250; // Slightly faster
+
+        function nBackGenerateRandomItem(excludeItem=null){let item;let attempts=0;do{item=NBACK_ITEMS_LIST[Math.floor(Math.random()*NBACK_ITEMS_LIST.length)];attempts++;}while(excludeItem&&item===excludeItem&&attempts<NBACK_ITEMS_LIST.length*2);return item;}
+        function nBackScheduleNextItem() { if(!nBackGameActive_nback)return; let currentDisplayInterval=Math.max(NBACK_MIN_INTERVAL,NBACK_BASE_INTERVAL-(nBackCurrentRound_nback*NBACK_DECREMENT_PER_ROUND)+(Math.random()*NBACK_RANDOM_JITTER-NBACK_RANDOM_JITTER/2)); if(nBackItemDisplayTimeoutId)clearTimeout(nBackItemDisplayTimeoutId); nBackItemDisplayTimeoutId=setTimeout(()=>{if(nBackGameActive_nback){nBackDisplayNextItem();}},currentDisplayInterval);}
+        function nBackStartGameForTest() { nBackResetGame(true); nBackGameActive_nback = true; nBackStartButton_nback.disabled = true; nBackMatchButton.disabled = false; nBackNoMatchButton.disabled = false; nBackMessageDisplay_nback.textContent = '观察出现的字母。'; nBackStartTime_nback = Date.now(); nBackDisplayNextItem();}
+        function nBackDisplayNextItem() {
+            if(!nBackGameActive_nback||(nBackCurrentRound_nback>=NBACK_ROUNDS_FOR_TEST&&NBACK_ROUNDS_FOR_TEST>0)){if(nBackGameActive_nback&&nBackCurrentRound_nback>=NBACK_ROUNDS_FOR_TEST){nBackEndGameForTest();}return;}
+            nBackDisplayItem.textContent = ''; nBackRoundDisp.textContent = `轮次: ${nBackCurrentRound_nback + 1}/${NBACK_ROUNDS_FOR_TEST}`;
+            setTimeout(() => {
+                if(!nBackGameActive_nback)return; nBackAwaitingResponse=false;let newItem;
+                if(nBackCurrentRound_nback>=NBACK_N_VALUE_FOR_TEST&&Math.random()<NBACK_TARGET_MATCH_PROBABILITY_FOR_TEST){newItem=nBackSequence[nBackCurrentRound_nback-NBACK_N_VALUE_FOR_TEST];}else{let potentialNBackItem=null;if(nBackCurrentRound_nback>=NBACK_N_VALUE_FOR_TEST){potentialNBackItem=nBackSequence[nBackCurrentRound_nback-NBACK_N_VALUE_FOR_TEST];}newItem=nBackGenerateRandomItem(potentialNBackItem);}
+                nBackSequence.push(newItem); nBackDisplayItem.textContent = newItem; nBackCurrentRound_nback++;
+                if(nBackCurrentRound_nback>NBACK_N_VALUE_FOR_TEST){nBackAwaitingResponse=true;nBackMessageDisplay_nback.textContent=`判断是否与 ${NBACK_N_VALUE_FOR_TEST} 轮前的字母匹配。`;}else{nBackMessageDisplay_nback.textContent=`观察出现的字母。`;}
+                if(nBackGameActive_nback){if(nBackCurrentRound_nback<=NBACK_ROUNDS_FOR_TEST){nBackScheduleNextItem();}else{nBackEndGameForTest();}}
+            }, NBACK_FLASH_DURATION);
+        }
+        function nBackHandleButtonClickForTest(userPressedMatch) {
+            if(!nBackGameActive_nback||!nBackAwaitingResponse||nBackCurrentRound_nback<=NBACK_N_VALUE_FOR_TEST){return;}
+            const currentItem=nBackSequence[nBackCurrentRound_nback-1]; const nBackComparisonItem=nBackSequence[nBackCurrentRound_nback-1-NBACK_N_VALUE_FOR_TEST]; const actualMatch=(currentItem===nBackComparisonItem);
+            if(userPressedMatch===actualMatch){nBackCorrectCount_nback++;} 
+            nBackAwaitingResponse=false;
+        }
+        function nBackEndGameForTest() {
+            nBackGameActive_nback=false; if(nBackItemDisplayTimeoutId){clearTimeout(nBackItemDisplayTimeoutId);nBackItemDisplayTimeoutId=null;} nBackStopTimer_nback();
+            nBackStartButton_nback.disabled=false; nBackMatchButton.disabled=true; nBackNoMatchButton.disabled=true; nBackAwaitingResponse=false;
+            const totalTime=(nBackStartTime_nback?(Date.now()-nBackStartTime_nback):0); const evaluableRounds=Math.max(0,NBACK_ROUNDS_FOR_TEST-NBACK_N_VALUE_FOR_TEST); const accuracy=evaluableRounds>0?(nBackCorrectCount_nback/evaluableRounds)*100:0;
+            nBackMessageDisplay_nback.textContent = `N-Back 测试完成!`;
+            completeCurrentTestAndProceed('nback', {accuracy: accuracy, timeMs: totalTime});
+        }
+        function nBackStopTimer_nback(){if(nBackTimerInterval_nback){clearInterval(nBackTimerInterval_nback);nBackTimerInterval_nback=null;}}
+        function nBackResetGame(isTestMode = false){ nBackStopTimer_nback();if(nBackItemDisplayTimeoutId){clearTimeout(nBackItemDisplayTimeoutId);nBackItemDisplayTimeoutId=null;}nBackSequence=[];nBackCurrentRound_nback=0;nBackCorrectCount_nback=0;nBackTimerDisplay.textContent='00:00.00';nBackDisplayItem.textContent='';nBackStartTime_nback=null; if(isTestMode){ nBackTimerDisplay.classList.add('globally-hidden'); nBackStartButton_nback.classList.add('globally-hidden'); nBackMatchButton.disabled = true; nBackNoMatchButton.disabled = true; nBackRoundDisp.classList.remove('globally-hidden');}}
+        nBackMatchButton.addEventListener('click',()=>nBackHandleButtonClickForTest(true)); nBackNoMatchButton.addEventListener('click',()=>nBackHandleButtonClickForTest(false));
+
+        // --- Block Count (Test Mode) ---
+        const bcSVGContainer = document.getElementById('blockCount-svg-container'); const bcSVG = document.getElementById('blockCount-svg'); let bcSVGGroup;
+        const bcNumpad = document.getElementById('blockCount-numpad'); const bcInputDisplay = document.getElementById('blockCount-input-display'); const bcStartButton_bc = document.getElementById('blockCountStartButton'); const bcScoreDisplay_bc = document.getElementById('blockCount-score-display'); const bcMessage_bc = document.getElementById('blockCount-message'); const bcRoundCountdownDisplay_bc = document.getElementById('blockCount-round-countdown'); const bcLevelDisp_bc = document.getElementById('blockCount-level-display');
+        const SVG_NS = "http://www.w3.org/2000/svg"; const BC_GRID_COLS=5, BC_GRID_ROWS=5, BC_MAX_STACK_HEIGHT=3; const BC_UNIT_SIZE=20,BC_PERSPECTIVE_X_FACTOR=0.866,BC_PERSPECTIVE_Y_FACTOR=0.5,BC_BLOCK_DRAW_HEIGHT=BC_UNIT_SIZE*0.8,BC_STROKE_COLOR='#1a202c',BC_STROKE_WIDTH=1,BC_COLOR_TOP='#cccccc',BC_COLOR_LEFT='#aaaaaa',BC_COLOR_RIGHT='#888888';
+        const BC_LEVEL_SETTINGS = [ // Extended to 7 levels, adjusted difficulty
+            {level: 1, minB:1,  maxB:5,   sRev:2300, mRev:4200, mP:0.1},
+            {level: 2, minB:1,  maxB:9,   sRev:1800, mRev:3800, mP:0.4},
+            {level: 3, minB:3, maxB:8,  sRev:1400, mRev:3400, mP:0.6},
+            {level: 4, minB:5, maxB:13,  sRev:1000, mRev:2500, mP:0.45},
+            {level: 5, minB:6, maxB:16,  sRev:2200,  mRev:2700, mP:0.1},
+            {level: 6, minB:5, maxB:10,  sRev:300,  mRev:400, mP:0},
+            {level: 7, minB:3, maxB:8,  sRev:600,  mRev:700, mP:1}
+        ];
+        let bcGameActive_bc = false; let bcCurrentBlocks = []; let bcActualBlockCount = 0; let bcUserInput = "";
+        let bcCurrentLevelIdx_bc = 0; let bcConsecutiveFails_bc = 0; let bcTotalTimeThisTest_bc = 0; let bcTestStartTime_bc;
+        let bcRevealTimeoutId, bcNextRoundCountdownIntervalId_bc, bcNextRoundTimeoutId_bc_next_trial;
+
+        function blockCountGenerateBlocksForTest() {
+            bcCurrentBlocks=[]; const settings=BC_LEVEL_SETTINGS[bcCurrentLevelIdx_bc];
+            const targetBlockCount=Math.floor(Math.random()*(settings.maxB-settings.minB+1))+settings.minB;
+            let placedBlockCount=0; const stackHeights=Array(BC_GRID_COLS).fill(null).map(()=>Array(BC_GRID_ROWS).fill(0));
+            const availableBasePositions=[]; for(let r=0;r<BC_GRID_ROWS;r++){for(let c=0;c<BC_GRID_COLS;c++){availableBasePositions.push({c,r});}} shuffleArray(availableBasePositions);
+            let attempt=0; while(placedBlockCount<targetBlockCount&&attempt<availableBasePositions.length*BC_MAX_STACK_HEIGHT*3){ const basePos=availableBasePositions[attempt%availableBasePositions.length]; const c=basePos.c,r=basePos.r; if(stackHeights[c][r]<BC_MAX_STACK_HEIGHT){bcCurrentBlocks.push({c,r,h:stackHeights[c][r]}); stackHeights[c][r]++; placedBlockCount++;} attempt++;} bcActualBlockCount=bcCurrentBlocks.length;
+        }
+        function blockCountDrawBlocksToSVG() { if(bcSVGGroup){bcSVGGroup.innerHTML='';}else{bcSVGGroup=document.createElementNS(SVG_NS,'g');bcSVGGroup.setAttribute('id','blockCount-svg-group');bcSVG.appendChild(bcSVGGroup);} bcSVGGroup.style.transition='none';bcSVGGroup.style.transform='translate(0px,0px)';bcSVGGroup.style.transformOrigin='center center'; const viewBox=bcSVG.viewBox.baseVal; const originX=viewBox.width/2; const maxGridHeightVisual=BC_GRID_ROWS*BC_PERSPECTIVE_Y_FACTOR*BC_UNIT_SIZE+BC_MAX_STACK_HEIGHT*BC_BLOCK_DRAW_HEIGHT; const originY=(viewBox.height-maxGridHeightVisual)/2+(BC_GRID_ROWS*BC_PERSPECTIVE_Y_FACTOR*BC_UNIT_SIZE); const sortedBlocks=[...bcCurrentBlocks].sort((a,b)=>{if(a.r!==b.r)return b.r-a.r;if(a.c!==b.c)return b.c-a.c;return a.h-b.h;}); sortedBlocks.forEach(block=>{const{c,r,h}=block;const baseX=originX+(c-r)*BC_PERSPECTIVE_X_FACTOR*BC_UNIT_SIZE;const baseY=originY+(c+r)*BC_PERSPECTIVE_Y_FACTOR*BC_UNIT_SIZE-h*BC_BLOCK_DRAW_HEIGHT;const points=[{x:baseX,y:baseY},{x:baseX+BC_PERSPECTIVE_X_FACTOR*BC_UNIT_SIZE,y:baseY+BC_PERSPECTIVE_Y_FACTOR*BC_UNIT_SIZE},{x:baseX,y:baseY+2*BC_PERSPECTIVE_Y_FACTOR*BC_UNIT_SIZE},{x:baseX-BC_PERSPECTIVE_X_FACTOR*BC_UNIT_SIZE,y:baseY+BC_PERSPECTIVE_Y_FACTOR*BC_UNIT_SIZE},]; const topPoints=points.map(p=>({x:p.x,y:p.y-BC_BLOCK_DRAW_HEIGHT})); const topFace=document.createElementNS(SVG_NS,'polygon');topFace.setAttribute('points',`${topPoints[3].x},${topPoints[3].y} ${topPoints[0].x},${topPoints[0].y} ${topPoints[1].x},${topPoints[1].y} ${topPoints[2].x},${topPoints[2].y}`);topFace.setAttribute('fill',BC_COLOR_TOP);topFace.setAttribute('stroke',BC_STROKE_COLOR);topFace.setAttribute('stroke-width',BC_STROKE_WIDTH);bcSVGGroup.appendChild(topFace); const leftFace=document.createElementNS(SVG_NS,'polygon');leftFace.setAttribute('points',`${points[3].x},${points[3].y} ${points[2].x},${points[2].y} ${topPoints[2].x},${topPoints[2].y} ${topPoints[3].x},${topPoints[3].y}`);leftFace.setAttribute('fill',BC_COLOR_LEFT);leftFace.setAttribute('stroke',BC_STROKE_COLOR);leftFace.setAttribute('stroke-width',BC_STROKE_WIDTH);bcSVGGroup.appendChild(leftFace); const rightFace=document.createElementNS(SVG_NS,'polygon');rightFace.setAttribute('points',`${points[2].x},${points[2].y} ${points[1].x},${points[1].y} ${topPoints[1].x},${topPoints[1].y} ${topPoints[2].x},${topPoints[2].y}`);rightFace.setAttribute('fill',BC_COLOR_RIGHT);rightFace.setAttribute('stroke',BC_STROKE_COLOR);rightFace.setAttribute('stroke-width',BC_STROKE_WIDTH);bcSVGGroup.appendChild(rightFace);}); bcSVGGroup.offsetHeight;}
+        function blockCountStartGameForTest(){ blockCountResetGame(true); bcTestStartTime_bc = Date.now(); bcGameActive_bc=true; bcStartButton_bc.disabled=true; bcCurrentLevelIdx_bc=0; bcConsecutiveFails_bc=0; bcTotalTimeThisTest_bc=0; blockCountStartNextBCTrial();}
+        function blockCountStartNextBCTrial() {
+            if(!bcGameActive_bc)return;
+            if(bcCurrentLevelIdx_bc >= BC_LEVEL_SETTINGS.length || bcConsecutiveFails_bc >=2) {
+                blockCountEndTest(); return;
+            }
+            bcLevelDisp_bc.textContent = `级别: ${BC_LEVEL_SETTINGS[bcCurrentLevelIdx_bc].level}`;
+            bcMessage_bc.textContent = "观察方块"; bcNumpad.classList.add('hidden'); bcInputDisplay.textContent=''; bcUserInput=''; bcRoundCountdownDisplay_bc.classList.add('hidden');
+            bcSVGContainer.classList.remove('hidden'); blockCountGenerateBlocksForTest(); blockCountDrawBlocksToSVG();
+            const settings=BC_LEVEL_SETTINGS[bcCurrentLevelIdx_bc]; const moveBlocks=Math.random()<settings.mP; let currentRevealTime; const containerWidth=bcSVGContainer.offsetWidth; const containerHeight=bcSVGContainer.offsetHeight;
+            if(moveBlocks){currentRevealTime=settings.mRev; const offScreenX=containerWidth*1.1;const offScreenY=containerHeight*1.1; const hT=[`translateX(${-offScreenX}px)`,`translateX(${offScreenX}px)`];const vT=[`translateY(${-offScreenY}px)`,`translateY(${offScreenY}px)`]; let sT,eT; if(Math.random()<0.5){sT=Math.random()<0.5?hT[0]:hT[1];eT=sT===hT[0]?hT[1]:hT[0];}else{sT=Math.random()<0.5?vT[0]:vT[1];eT=sT===vT[0]?vT[1]:vT[0];} bcSVGGroup.style.transform=sT; requestAnimationFrame(()=>{requestAnimationFrame(()=>{bcSVGGroup.style.transition=`transform ${currentRevealTime/1000}s linear`;bcSVGGroup.style.transform=eT;});});}else{currentRevealTime=settings.sRev;}
+            if(bcRevealTimeoutId)clearTimeout(bcRevealTimeoutId);
+            bcRevealTimeoutId=setTimeout(()=>{
+                if(bcSVGGroup){bcSVGGroup.innerHTML='';} bcSVGContainer.classList.add('hidden'); bcNumpad.classList.remove('hidden'); bcMessage_bc.textContent="请输入方块数量"; if(bcSVGGroup){bcSVGGroup.style.transition='none';bcSVGGroup.style.transform='translate(0px,0px)';}
+            },currentRevealTime);
+        }
+        function blockCountHandleNumpadForTest(event){
+            if(!bcGameActive_bc||bcNumpad.classList.contains('hidden'))return; const key=event.target.dataset.key;
+            if(key==='C'){bcUserInput="";}else if(key==='Del'){bcUserInput=bcUserInput.slice(0,-1);}else if(bcUserInput.length<3 && "0123456789".includes(key)){bcUserInput+=key;} bcInputDisplay.textContent=bcUserInput; // Allow up to 3 digits for >99 blocks
+            
+            // Determine expected length based on max possible blocks in current or next level, or just use 2 if simpler
+            // For this test, we'll check when a reasonable number of digits is entered OR if they enter something and pause.
+            // A simple check: if they entered 1 or 2 digits, assume they might be done.
+            // For now, check answer only when they type the expected number of digits.
+            const expectedLength = bcActualBlockCount < 10 ? 1 : (bcActualBlockCount < 100 ? 2 : 3) ;
+            if(bcUserInput.length === expectedLength && bcUserInput !== ""){blockCountCheckAnswerForTest();}
+        }
+        function blockCountCheckAnswerForTest(){
+            bcNumpad.classList.add('hidden'); const userAnswer=parseInt(bcUserInput);
+            if(userAnswer===bcActualBlockCount){
+                // bcMessage_bc.textContent="记忆正确。"; // NO FEEDBACK
+                bcCurrentLevelIdx_bc++; bcConsecutiveFails_bc=0;
+            } else {
+                // bcMessage_bc.textContent="记忆有误。"; // NO FEEDBACK
+                bcConsecutiveFails_bc++;
+            }
+            if(bcNextRoundTimeoutId_bc_next_trial) clearTimeout(bcNextRoundTimeoutId_bc_next_trial);
+            bcNextRoundTimeoutId_bc_next_trial = setTimeout(() => {
+                bcMessage_bc.textContent = '准备下一轮...'; // Neutral transition
+                blockCountStartNextBCTrial();
+            }, 300); 
+        }
+        function blockCountEndTest() {
+            bcGameActive_bc = false; blockCountStopGameTimeouts();
+            bcTotalTimeThisTest_bc = Date.now() - bcTestStartTime_bc;
+            let achievedLevel = 0;
+            if (bcCurrentLevelIdx_bc >= BC_LEVEL_SETTINGS.length) {
+                achievedLevel = BC_LEVEL_SETTINGS[BC_LEVEL_SETTINGS.length - 1].level;
+            } else if (bcConsecutiveFails_bc >= 2) {
+                 achievedLevel = bcCurrentLevelIdx_bc > 0 ? BC_LEVEL_SETTINGS[bcCurrentLevelIdx_bc-1].level : 0;
+            } else {
+                 achievedLevel = bcCurrentLevelIdx_bc > 0 ? BC_LEVEL_SETTINGS[bcCurrentLevelIdx_bc-1].level : 0;
+            }
+            bcMessage_bc.textContent = "方块数量测试结束。";
+            completeCurrentTestAndProceed('blockCount', { level: achievedLevel, timeMs: bcTotalTimeThisTest_bc });
+        }
+        function blockCountStopGameTimeouts(){clearTimeout(bcRevealTimeoutId);clearTimeout(bcNextRoundTimeoutId_bc_next_trial);bcRevealTimeoutId=null;bcNextRoundTimeoutId_bc_next_trial=null;}
+        function blockCountResetGame(isTestMode = false){ blockCountStopGameTimeouts();bcGameActive_bc=false;bcStartButton_bc.disabled=false;bcNumpad.classList.add('hidden');bcRoundCountdownDisplay_bc.classList.add('hidden');if(bcSVGGroup){bcSVGGroup.innerHTML='';bcSVGGroup.style.transition='none';bcSVGGroup.style.transform='translate(0px,0px)';}bcSVGContainer.classList.remove('hidden');bcUserInput="";bcInputDisplay.textContent=""; if(isTestMode){ bcScoreDisplay_bc.classList.add('globally-hidden'); bcStartButton_bc.classList.add('globally-hidden'); bcLevelDisp_bc.classList.remove('globally-hidden');}}
+        Array.from(bcNumpad.querySelectorAll('button')).forEach(button=>{button.addEventListener('click',blockCountHandleNumpadForTest);});
+
+        // --- Final Report Generation ---
+        function generateFinalReport() {
+            allGameModeDivs.forEach(div => div.classList.add('hidden'));
+            finalReportDiv.classList.remove('hidden');
+
+            // --- Normalization and Scoring (Stricter) ---
+            // Schulte (5x5): Target 12s (excellent), 40s (poor)
+            const schulteTimeSec = testResults.schulte ? (testResults.schulte.timeMs / 1000).toFixed(2) : "N/A";
+            document.getElementById('report-schulte-time').textContent = schulteTimeSec;
+            let schulteScore = 0;
+            if (testResults.schulte) {
+                schulteScore = Math.max(0, Math.min(100, 100 * (20 - (testResults.schulte.timeMs/1000)) / (20 - 6)));
+            }
+
+            // Memory Matrix (5 levels): Level 0-5
+            const memoryLevel = testResults.memory ? testResults.memory.level : 0;
+            const memoryTimeSec = testResults.memory ? (testResults.memory.timeMs / 1000).toFixed(2) : "N/A";
+            document.getElementById('report-memory-level').textContent = memoryLevel;
+            document.getElementById('report-memory-time').textContent = memoryTimeSec;
+            let memoryScore = (memoryLevel / MEMORY_LEVEL_SETTINGS.length) * 90 + 10 * ((45 - memoryTimeSec) / (45 - 15));
+
+
+            // Stroop (4 rounds): Acc 0-100%. Time: 4s (exc), 12s (poor)
+            const stroopAcc = testResults.stroop ? testResults.stroop.accuracy.toFixed(0) : "0";
+            const stroopTimeSec = testResults.stroop ? (testResults.stroop.timeMs / 1000).toFixed(2) : "N/A";
+            document.getElementById('report-stroop-accuracy').textContent = stroopAcc;
+            document.getElementById('report-stroop-time').textContent = stroopTimeSec;
+            let stroopScore = 0;
+            if (testResults.stroop) {
+                const stroopTimeS = testResults.stroop.timeMs / 1000;
+                const stroopTimeScorePart = Math.max(0, Math.min(100, 100 * (13 - stroopTimeS) / (13 - 5)));
+                stroopScore = stroopTimeScorePart - ((100 - testResults.stroop.accuracy) * 2.2);
+            }
+            
+            // N-Back (2-Back, 15 rounds): Acc 0-100%. Time: 25s (good), 60s (poor)
+            const nbackAcc = testResults.nback ? testResults.nback.accuracy.toFixed(0) : "0";
+            const nbackTimeSec = testResults.nback ? (testResults.nback.timeMs / 1000).toFixed(2) : "N/A";
+            document.getElementById('report-nback-accuracy').textContent = nbackAcc;
+            document.getElementById('report-nback-time').textContent = nbackTimeSec;
+            let nbackScore = 0;
+            if (testResults.nback) {
+                const nbackTimeS = testResults.nback.timeMs / 1000;
+                //const nbackTimeScorePart = Math.max(0, Math.min(100, 100 * (60 - nbackTimeS) / (60 - 25)));
+                nbackScore = testResults.nback.accuracy; // Accuracy weighted more
+            }
+
+            // Block Count (7 levels): Level 0-7
+            const blockcountLevel = testResults.blockCount ? testResults.blockCount.level : 0;
+            const blockcountTimeSec = testResults.blockCount ? (testResults.blockCount.timeMs / 1000).toFixed(2) : "N/A";
+            document.getElementById('report-blockcount-level').textContent = blockcountLevel;
+            document.getElementById('report-blockcount-time').textContent = blockcountTimeSec;
+            let blockcountScore = (blockcountLevel / BC_LEVEL_SETTINGS.length) * 100;
+
+
+            // Weighted Overall Score (Adjusted weights if desired, e.g. more on N-Back and Memory)
+            const overallAttentionScore = 
+                (schulteScore * 0.24) +     // Slightly less weight
+                (memoryScore * 0.16) +      // Same
+                (stroopScore * 0.18) +      // Same
+                (nbackScore * 0.20) +       // Same
+                (blockcountScore * 0.22);   // Slightly more weight
+
+            document.getElementById('report-overall-score').textContent = overallAttentionScore.toFixed(2);
+
+            let attentionLevelText = "注意力正常"; // Stricter thresholds
+            if (overallAttentionScore < 40) attentionLevelText = "注意力非常涣散";
+            else if (overallAttentionScore < 60 && overallAttentionScore >= 40) attentionLevelText = "注意力涣散";
+            else if (overallAttentionScore > 80) attentionLevelText = "注意力惊人";
+            document.getElementById('report-attention-level').textContent = attentionLevelText;
+        }
+
+
+        // --- Initial Setup on Load ---
+        document.addEventListener('DOMContentLoaded', () => {
+            allGameModeDivs.forEach(div => div.classList.add('hidden'));
+            finalReportDiv.classList.add('hidden'); 
+            initialScreenDiv.classList.remove('hidden');
+
+            schulteResetGame(true);
+            memoryResetGame(true);
+            stroopResetGame(true);
+            nBackResetGame(true);
+            blockCountResetGame(true);
+        });
+
+    </script>
+</body>
+</html>
