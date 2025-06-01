@@ -557,7 +557,7 @@
                     </select>
                 </label>
             </div>
-            <div id="blockCount-score-display" class="timer-display">回合: 0 | 正确: 0</div>
+            <div id="blockCount-score-display" class="timer-display">正确率 0/0</div>
             <div id="blockCount-svg-container" class="blockCount-svg-container">
                 <svg id="blockCount-svg" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 320"></svg>
                  <div id="blockCount-round-countdown" class="countdown-display small hidden"></div>
@@ -822,7 +822,7 @@
         const BC_COLOR_RIGHT = '#888888';
 
         const BC_DIFFICULTY_SETTINGS = {
-            'easy':   { minBlocks: 3,  maxBlocks: 10,  staticRevealMin: 1000, staticRevealMax: 2000, moveRevealMin: 3500, moveRevealMax: 4800, moveP: 0.25 },
+            'easy':   { minBlocks: 3,  maxBlocks: 11,  staticRevealMin: 1000, staticRevealMax: 2000, moveRevealMin: 3500, moveRevealMax: 4800, moveP: 0.25 },
             'medium': { minBlocks: 6,  maxBlocks: 20, staticRevealMin: 250, staticRevealMax: 1300, moveRevealMin: 2200, moveRevealMax: 4000, moveP: 0.4 },
             'hard':   { minBlocks: 8, maxBlocks: 20, staticRevealMin: 50, staticRevealMax: 700, moveRevealMin: 500, moveRevealMax: 1800, moveP: 0.4 }
         };
@@ -845,15 +845,17 @@
 
         function blockCountGenerateBlocks() {
             // ... (this function remains the same)
+            
+            bcCurrentBlocks = [];
+            const settings = BC_DIFFICULTY_SETTINGS[bcDifficulty];
+
             var minBs = settings.minBlocks - 2;
             var maxBs;
             if(settings.maxBlocks > 10){
                 maxBs = settings.minBlocks - 1;
                 maxBs = settings.maxBlocks - 8
             }
-            
-            bcCurrentBlocks = [];
-            const settings = BC_DIFFICULTY_SETTINGS[bcDifficulty];
+
             const targetBlockCount = Math.floor(Math.random() * (maxBs - minBs + 1)) + minBs;
             
             let placedBlockCount = 0;
@@ -944,7 +946,7 @@
 
         function blockCountUpdateScoreDisplay() {
             // ... (this function remains the same)
-            bcScoreDisplay.textContent = `回合: ${bcCurrentRound} | 正确: ${bcCorrectAnswers}`;
+            bcScoreDisplay.textContent = `正确率 ${bcCorrectAnswers}/${bcCurrentRound}`;
         }
 
         function blockCountStartGame() {
