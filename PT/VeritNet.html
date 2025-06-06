@@ -1,0 +1,220 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test</title>
+    <style>
+        
+        @property --wipe-position {
+          syntax: '<length-percentage>';
+          inherits: false;
+          initial-value: 0%;
+        }
+
+        /* --- 全局 --- */
+        html, body {
+            margin: 0;
+            padding: 0;
+            width: 100vw;
+            height: 100vh;
+            overflow: hidden;
+            box-sizing: border-box;
+            background-color: #0a192f;
+        }
+
+        /* --- 主内容 --- */
+        #mainContent {
+            opacity: 1;
+            width: 100%;
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            background-color: #0a192f; /* 深蓝色 */
+            color: #eee;
+            font-family: sans-serif;
+            text-align: center;
+            box-sizing: border-box;
+            padding: 20px;
+            overflow-y: auto;
+        }
+
+        #mainContent h1 { margin-top: 0; color: #eee; }
+        #mainContent p { color: #ccc; max-width: 800px; line-height: 1.6; }
+        #mainContent img { max-width: 90%; height: auto; margin-bottom: 20px; border-radius: 8px; box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2); }
+
+        /* --- 加载动画覆盖层 --- */
+        #loadingOverlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            background-color: black;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 9999;
+            overflow: hidden;
+            
+            /* 
+             * 修改点 1：定义一个动态的 clip-path
+             * 这个多边形代表加载层的可见区域。它的位置由 --wipe-position 和 --skew-offset 两个变量决定。
+             * 初始状态下，--wipe-position 是 0%，它将覆盖整个屏幕。
+             */
+            --skew-offset: 0px; /* JS会更新这个值 */
+            clip-path: polygon(
+                /* 左上点 */ var(--wipe-position) 0%,
+                /* 右上点 */ 100% 0%,
+                /* 右下点 */ 100% 100%,
+                /* 左下点 */ calc(var(--wipe-position) - var(--skew-offset)) 100%
+            );
+            
+            /* 
+             * 修改点 2：过渡动画的目标是 --wipe-position 变量，而不是 clip-path 本身
+             */
+            transition: --wipe-position var(--unveil-duration, 0.6s) ease-in-out;
+        }
+
+        #loadingVideo {
+            max-width: 25vw;
+            max-height: 25vh;
+            min-width: 100px;
+            min-height: 100px;
+            width: auto;
+            height: auto;
+            object-fit: contain;
+        }
+
+
+        /* 媒体查询 - 手机竖屏 (例如，宽度小于等于 768px) */
+        @media (max-width: 768px) and (orientation: portrait) {
+            #loadingVideo {
+                width: 70vw; /* 手机竖屏时，宽度占 75% */
+                max-width: none; /* 移除最大宽度限制，让 75vw 生效 */
+                /* 如果需要，可以设置最小宽度 */
+                /* min-width: 280px; */
+            }
+        }
+
+        /* 媒体查询 - 手机横屏 (例如，宽度小于等于 992px 且是横屏) */
+        @media (max-width: 992px) and (orientation: landscape) {
+            #loadingVideo {
+                width: 50vw; /* 手机横屏时，宽度占 50% */
+                max-width: 600px; /* 横屏可能比竖屏宽，但仍需限制 */
+                max-height: 90vh; /* 横屏时高度可能更紧张，可以调整最大高度 */
+            }
+        }
+
+        /* 媒体查询 - 更小的屏幕（例如，宽度小于 480px，针对非常小的手机屏幕） */
+        @media (max-width: 480px) {
+            #loadingVideo {
+                padding: 15px;
+                width: 85vw; /* 极小屏幕可以再增加宽度占比 */
+            }
+        }
+    </style>
+</head>
+<body>
+
+    <div id="loadingOverlay">
+        <video id="loadingVideo" autoplay muted playsinline>
+            <source src="1.mp4" type="video/mp4">
+            你的浏览器不支持HTML5视频。
+        </video>
+    </div>
+
+    <div id="mainContent">
+        <h1>加载页面测试</h1>
+        <p>图片宽带测试</p>
+        <img src="https://images.unsplash.com/photo-1743704458905-9edf92294d7e?q=80&w=3908&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D" alt="随机图片">
+        <p>字体测试</p>
+        <p>Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum.</p>
+        <p>Sed ut perspiciatis unde omnis iste natus error sit voluptatem accusantium doloremque laudantium, totam rem aperiam, eaque ipsa quae ab illo inventore veritatis et quasi architecto beatae vitae dicta sunt explicabo.</p>
+        <script src="https://ajax.googleapis.com/ajax/libs/webfont/1.6.26/webfont.js"></script>
+        <script>
+            WebFont.load({
+                google: { families: ['Roboto:400,700'] },
+                active: function() { console.log('WebFont 加载成功！'); },
+                inactive: function() { console.error('WebFont 加载失败！'); }
+            });
+            console.log("外部脚本加载模拟成功！");
+        </script>
+        <div style="height: 500px; background-color: #1c2a4a; width: 100%; margin-top: 20px;"></div>
+    </div>
+
+    <script>
+        // --- 可配置参数 ---
+        const ANIMATION_DELAY_AFTER_VIDEO_END = 200;
+        const UNVEIL_ANIMATION_DURATION = 600;
+        const UNVEIL_SKEW_ANGLE = 15;
+
+        const loadingVideo = document.getElementById('loadingVideo');
+        const loadingOverlay = document.getElementById('loadingOverlay');
+        const mainContent = document.getElementById('mainContent');
+
+        let videoEnded = false;
+        let pageLoaded = false;
+        let isUnveiling = false;
+
+        // --- 初始化设置 ---
+        // 将JS中的动画时长传递给CSS变量，方便统一管理
+        loadingOverlay.style.setProperty('--unveil-duration', `${UNVEIL_ANIMATION_DURATION / 1000}s`);
+
+        function checkAndUnveil() {
+            if (videoEnded && pageLoaded && !isUnveiling) {
+                isUnveiling = true;
+
+                // 1. 计算倾斜角度在屏幕高度上产生的水平偏移量
+                const SKEW_OFFSET_PX = window.innerHeight * Math.tan(UNVEIL_SKEW_ANGLE * Math.PI / 180);
+
+                // 2. 将计算出的偏移量设置到CSS变量中，供clip-path公式使用
+                loadingOverlay.style.setProperty('--skew-offset', `${SKEW_OFFSET_PX}px`);
+
+                /*
+                 * 修改点 3：驱动动画
+                 * 我们只需要改变 --wipe-position 变量的值，CSS的transition就会生效。
+                 * 目标值要足够大，以确保整个倾斜的裁剪区域完全移出屏幕右侧。
+                 * 我们需要让多边形最左边的点（左下点）移动到屏幕最右边（100vw）。
+                 * 左下点的 x 坐标是 `var(--wipe-position) - var(--skew-offset)`
+                 * 所以， final_wipe_position - SKEW_OFFSET_PX = 100vw
+                 * => final_wipe_position = 100vw + SKEW_OFFSET_PX
+                 */
+                const finalWipePosition = `calc(100vw + ${SKEW_OFFSET_PX}px)`;
+                loadingOverlay.style.setProperty('--wipe-position', finalWipePosition);
+
+                // 等待裁剪动画完成
+                setTimeout(() => {
+                    loadingOverlay.style.display = 'none';
+                }, UNVEIL_ANIMATION_DURATION);
+            }
+        }
+
+        // --- 事件监听 ---
+        loadingVideo.onended = function() {
+            loadingVideo.currentTime = loadingVideo.duration;
+            loadingVideo.pause();
+            setTimeout(() => {
+                videoEnded = true;
+                checkAndUnveil();
+            }, ANIMATION_DELAY_AFTER_VIDEO_END);
+        };
+
+        window.addEventListener('load', () => {
+            pageLoaded = true;
+            checkAndUnveil();
+        });
+
+        loadingVideo.play().catch(error => {
+            console.warn("视频自动播放可能受阻:", error);
+            setTimeout(() => {
+                videoEnded = true;
+                checkAndUnveil();
+            }, 50);
+        });
+    </script>
+
+</body>
+</html>
