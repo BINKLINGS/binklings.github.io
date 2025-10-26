@@ -1,0 +1,799 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>上传魔偶入侵协议</title>
+    <style>
+        /* *
+         * ========================================
+         * 基础和颜色定义 (v7: 2077 风格)
+         * ========================================
+         * */
+        :root {
+            --color-cyber-bg: #020a11;
+            --color-cyber-main: #d4f50e; 
+            --color-cyber-main-dark: #3a4405; 
+            --color-cyber-yellow: #d4f50e; 
+            --color-cyber-red: #ff003c;
+            --color-cyber-green: #00ff00;
+            --color-cyber-text: #a1e8ff; 
+            --color-cyber-dim: #6d7532; 
+        }
+
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        html, body { height: 100%; overflow: hidden; }
+
+        body {
+            font-family: 'Share Tech Mono', Consolas, Monaco, 'Courier New', monospace;
+            background-color: var(--color-cyber-bg);
+            color: var(--color-cyber-text);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 0.25rem;
+            text-shadow: 0 0 3px var(--color-cyber-main);
+            transition: background-color 0.5s ease;
+        }
+
+        body.game-won { background-color: #011a01; }
+        body.game-lost { background-color: #1a0101; }
+        button { font-family: inherit; cursor: pointer; }
+        .hidden { display: none !important; }
+
+        /* v7: 背景数据流 */
+        #background-stream {
+            position: fixed;
+            top: 0; left: 0; width: 100%; height: 100%;
+            pointer-events: none;
+            color: var(--color-cyber-main-dark);
+            font-size: 0.8rem;
+            line-height: 1.2;
+            word-break: break-all;
+            text-transform: uppercase;
+            text-shadow: none;
+            opacity: 0.5;
+            z-index: -1;
+        }
+
+        /* *
+         * ========================================
+         * 游戏主容器
+         * ========================================
+         * */
+        .game-container {
+            width: 100%; max-width: 1000px; margin: auto;
+            border: 1px solid var(--color-cyber-main-dark);
+            background-color: rgba(2, 10, 17, 0.85);
+            backdrop-filter: blur(5px);
+            box-shadow: 0 0 25px rgba(212, 245, 14, 0.2), inset 0 0 15px rgba(212, 245, 14, 0.1);
+            padding: 0.5rem;
+            height: 100%; max-height: 100vh;
+            display: flex; flex-direction: column;
+        }
+        @media (min-width: 768px) { .game-container { padding: 1rem; } }
+
+        /* *
+         * ========================================
+         * 闪烁标题 & 打字机效果
+         * ========================================
+         * */
+        .title-glitch {
+            position: relative; font-size: 2rem; color: var(--color-cyber-main);
+            text-transform: uppercase; animation: glitch 1.5s linear infinite;
+            text-align: center; margin-bottom: 1rem;
+        }
+        @keyframes glitch { 2%, 64% { transform: translate(2px, 0) skew(0deg); } 4%, 60% { transform: translate(-2px, 0) skew(0deg); } 62% { transform: translate(0, 0) skew(5deg); } }
+        .title-glitch::before, .title-glitch::after { content: attr(data-text); position: absolute; left: 0; width: 100%; height: 100%; background: transparent; clip: rect(auto, auto, auto, auto); }
+        .title-glitch::before { left: 2px; text-shadow: -2px 0 var(--color-cyber-red); animation: glitch-anim-1 2s linear infinite reverse; }
+        .title-glitch::after { left: -2px; text-shadow: -2px 0 var(--color-cyber-text); animation: glitch-anim-2 2.5s linear infinite reverse; }
+        @keyframes glitch-anim-1 { 0%, 100% { clip-path: inset(45% 0 50% 0); } 25% { clip-path: inset(0 0 75% 0); } 50% { clip-path: inset(75% 0 10% 0); } 75% { clip-path: inset(25% 0 50% 0); } }
+        @keyframes glitch-anim-2 { 0%, 100% { clip-path: inset(10% 0 85% 0); } 25% { clip-path: inset(60% 0 10% 0); } 50% { clip-path: inset(20% 0 70% 0); } 75% { clip-path: inset(80% 0 5% 0); } }
+        
+        .typewriter {
+            overflow: hidden;
+            border-right: .1em solid var(--color-cyber-main);
+            white-space: nowrap;
+            letter-spacing: .1em;
+            /* v7.1: 添加 forwards 来保持动画结束状态 */
+            animation: typing 2s steps(30, end) forwards, blink-caret .75s step-end infinite;
+            margin: 0 auto 1.5rem auto;
+            max-width: fit-content;
+        }
+        @keyframes typing { from { width: 0 } to { width: 100% } }
+        @keyframes blink-caret { from, to { border-color: transparent } 50% { border-color: var(--color-cyber-main); } }
+
+
+        /* *
+         * ========================================
+         * 难度选择 & 自定义面板
+         * ========================================
+         * */
+        #difficulty-screen { text-align: center; }
+        .difficulty-options { display: flex; flex-direction: column; gap: 0.5rem; animation: fadeIn 0.5s ease-out forwards; }
+        @media (min-width: 768px) { .difficulty-options { flex-direction: row; justify-content: center; gap: 1rem; } }
+        .difficulty-btn {
+            font-size: 0.9rem; color: var(--color-cyber-main); background-color: transparent;
+            border: 1px solid var(--color-cyber-main); padding: 0.5rem 1rem;
+            transition: all 0.3s ease; text-transform: uppercase;
+        }
+        .difficulty-btn:hover {
+            background-color: var(--color-cyber-main-dark); color: var(--color-cyber-bg);
+            box-shadow: 0 0 15px var(--color-cyber-main); transform: translateY(-2px);
+        }
+        .difficulty-btn.secondary { border-color: var(--color-cyber-dim); color: var(--color-cyber-text); }
+        .difficulty-btn.secondary:hover { background-color: var(--color-cyber-dim); }
+
+        #custom-panel { animation: fadeIn 0.5s ease-out forwards; }
+        .custom-grid {
+            display: grid; grid-template-columns: auto 1fr auto; gap: 1rem; align-items: center;
+            max-width: 500px; margin: 2rem auto; text-align: left;
+        }
+        .custom-grid label { text-transform: uppercase; font-size: 0.9rem; }
+        .custom-grid input[type="range"] { width: 100%; accent-color: var(--color-cyber-main); }
+        .custom-actions { display: flex; justify-content: center; gap: 1rem; margin-top: 1.5rem; }
+
+        /* *
+         * ========================================
+         * 游戏主界面布局
+         * ========================================
+         * */
+        #game-screen { display: flex; flex-direction: column; flex-grow: 1; min-height: 0; }
+        .game-header {
+            display: flex; 
+            justify-content: space-between; 
+            align-items: center;
+            padding-bottom: 0.5rem; 
+            margin-bottom: 0.5rem; 
+            border-bottom: 1px solid var(--color-cyber-main-dark);
+            flex-shrink: 0; 
+            flex-wrap: wrap; /* v7.1: 允许换行 */
+            gap: 0.5rem; /* v7.1: 为换行后的元素添加间距 */
+        }
+        .info-bar-section { flex: 1 1 0; text-align: center; }
+        #info-bar-left { text-align: left; }
+        #info-bar-right { text-align: right; }
+        .game-header h2 {
+             font-size: 0.8rem; /* v7.1: 进一步缩小 */
+             text-transform: uppercase; 
+             letter-spacing: 0.1em; 
+             margin-bottom: 0.25rem; 
+             color: var(--color-cyber-dim); /* v7.1: 使用暗色，降低视觉权重 */
+             text-shadow: none; /* v7.1: 移除阴影，使其更像标签 */
+        }
+        
+        #result-display h2 { font-size: 1.2rem; }
+        #result-display p { font-size: 0.9rem; color: var(--color-cyber-text); opacity: 0.8; }
+        
+        .game-main-content { display: flex; flex-direction: column; gap: 0.5rem; flex-grow: 1; min-height: 0; }
+        .sequences-panel, .matrix-panel {
+            animation: slideInUp 0.6s cubic-bezier(0.25, 0.46, 0.45, 0.94) forwards;
+        }
+        .matrix-panel { animation-delay: 0.1s; }
+        
+        /* v7.1: 新增 - 还原并缩小面板标题 */
+        .sequences-panel h2, .matrix-panel h2 {
+            font-size: 0.9rem;
+            text-transform: uppercase;
+            letter-spacing: 0.1em;
+            margin-bottom: 0.5rem;
+            padding-bottom: 0.25rem;
+            border-bottom: 1px solid var(--color-cyber-main-dark);
+        }
+
+        @media (min-width: 768px) {
+            .game-main-content { flex-direction: row; gap: 1rem; }
+            .sequences-panel { width: 33.33%; }
+            .matrix-panel { width: 66.67%; }
+        }
+
+        /* *
+         * ========================================
+         * 游戏组件
+         * ========================================
+         * */
+        #buffer-container { display: flex; gap: 0.25rem; justify-content: center; }
+        .buffer-box {
+            width: 35px; height: 35px; font-size: 1.1rem;
+            display: flex; align-items: center; justify-content: center;
+            border: 1px solid var(--color-cyber-dim); background-color: rgba(0,0,0,0.3);
+            color: var(--color-cyber-text); flex-shrink: 0; transition: all 0.2s ease;
+        }
+        @media (min-width: 768px) { .buffer-box { width: 45px; height: 45px; } }
+        
+        @keyframes fill-buffer {
+            0% { transform: translateY(10px) scale(0.8); opacity: 0; }
+            100% { transform: translateY(0) scale(1); opacity: 1; }
+        }
+        .buffer-box.filled {
+            border-color: var(--color-cyber-yellow); color: var(--color-cyber-yellow);
+            animation: fill-buffer 0.2s ease-out;
+        }
+
+        #timer { font-size: 1.8rem; color: var(--color-cyber-main); }
+        #timer.low-time { color: var(--color-cyber-red); animation: pulse-red 1s infinite; }
+        @keyframes pulse-red { 0%, 100% { text-shadow: 0 0 5px var(--color-cyber-red); } 50% { text-shadow: 0 0 15px var(--color-cyber-red); } }
+
+        #sequences-container { display: flex; flex-direction: column; gap: 0.25rem; }
+        .sequence-item { transition: all 0.3s ease; padding: 0.25rem; }
+        .sequence-item .code { font-size: 1.1rem; letter-spacing: 0.1em; display: flex; flex-wrap: wrap; gap: 0.5em; align-items: center; }
+        .sequence-item .reward { font-size: 0.9rem; opacity: 0.8; color: var(--color-cyber-text); text-shadow: none; margin-right: 0.5em; }
+        .sequence-item.completed .reward { color: var(--color-cyber-green); opacity: 1; }
+        
+        .code-part { transition: all 0.3s ease; opacity: 0.7; color: var(--color-cyber-text); text-shadow: none; }
+        .code-part.matched { color: var(--color-cyber-green); text-shadow: 0 0 5px var(--color-cyber-green); opacity: 1; }
+        .code-part.next-match { color: var(--color-cyber-yellow); text-shadow: 0 0 5px var(--color-cyber-yellow); animation: pulse-yellow 1.5s infinite; opacity: 1; }
+        @keyframes pulse-yellow { 0%, 100% { text-shadow: 0 0 3px var(--color-cyber-yellow); } 50% { text-shadow: 0 0 10px var(--color-cyber-yellow); } }
+
+        #code-matrix {
+            display: grid; gap: 2px; background-color: var(--color-cyber-main-dark);
+            padding: 2px; grid-template-columns: repeat(var(--cols, 5), 1fr);
+        }
+
+        .code-cell {
+            position: relative; /* for solution step */
+            width: 100%; aspect-ratio: 1 / 1; 
+            font-size: clamp(0.9rem, 3.5vw, 1.4rem);
+            border: 1px solid transparent; /* v7: hover 时显示边框 */
+            cursor: pointer; display: flex; align-items: center; justify-content: center;
+            color: var(--color-cyber-main); background-color: var(--color-cyber-bg);
+            transition: all 0.15s ease;
+        }
+        .code-cell:not(:disabled):hover {
+            background-color: var(--color-cyber-main-dark); color: var(--color-cyber-bg);
+            border-color: var(--color-cyber-main);
+            transform: scale(1.05); z-index: 5;
+        }
+        .code-cell:disabled { color: var(--color-cyber-dim); cursor: not-allowed; background-color: rgba(0,0,0,0.2); }
+        
+        @keyframes select-cell { 0% { opacity: 0.5; } 100% { opacity: 1; } }
+        .code-cell.selected {
+            background-color: var(--color-cyber-main); color: var(--color-cyber-bg);
+            text-shadow: none; box-shadow: 0 0 15px var(--color-cyber-main);
+            transform: scale(1.05); animation: select-cell 0.3s forwards;
+        }
+
+        .solution-step {
+            position: absolute; top: 1px; right: 2px; font-size: 0.65rem;
+            font-weight: bold; color: var(--color-cyber-bg);
+            background-color: var(--color-cyber-red); padding: 0px 4px;
+            border-radius: 3px; line-height: 1.5; z-index: 2;
+        }
+        
+        /* *
+         * ========================================
+         * 动画效果
+         * ========================================
+         * */
+        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+        @keyframes slideInUp {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+    </style>
+</head>
+<body>
+    <!-- v7: 背景数据流效果 -->
+    <div id="background-stream"></div>
+
+    <div class="game-container">
+        
+        <!-- v7: 难度/自定义选择界面 -->
+        <div id="difficulty-screen">
+            <h1 class="title-glitch" data-text="入侵协议">入侵协议</h1>
+            <p id="difficulty-prompt" class="typewriter"></p> <!-- v7: 用于打字机效果 -->
+            
+            <div id="difficulty-options" class="difficulty-options hidden">
+                <button class="difficulty-btn" onclick="startGame('easy')">低 (6x6)</button>
+                <button class="difficulty-btn" onclick="startGame('medium')">中 (7x7)</button>
+                <button class="difficulty-btn" onclick="startGame('hard')">高 (8x8)</button>
+                <button class="difficulty-btn" onclick="startGame('nightmare')">噩梦 (9x9)</button>
+                <button class="difficulty-btn" onclick="showCustomPanel()">自定义...</button>
+            </div>
+
+            <!-- v7: 自定义参数面板 -->
+            <div id="custom-panel" class="hidden">
+                <div class="custom-grid">
+                    <label for="c-rows">矩阵尺寸:</label>
+                    <input type="range" id="c-rows" min="5" max="10" value="7">
+                    <span id="c-rows-val">7x7</span>
+                    
+                    <label for="c-buffer">缓冲区:</label>
+                    <input type="range" id="c-buffer" min="4" max="12" value="8">
+                    <span id="c-buffer-val">8</span>
+                    
+                    <label for="c-time">时间 (s):</label>
+                    <input type="range" id="c-time" min="15" max="120" value="45">
+                    <span id="c-time-val">45s</span>
+
+                    <label for="c-sequences">序列数量:</label>
+                    <input type="range" id="c-sequences" min="2" max="7" value="4">
+                    <span id="c-sequences-val">4</span>
+                    
+                    <label for="c-seqLength">序列长度:</label>
+                    <input type="range" id="c-seqLength" min="2" max="7" value="4">
+                    <span id="c-seqLength-val">3-4</span>
+                </div>
+                <div class="custom-actions">
+                    <button class="difficulty-btn" onclick="startCustomGame()">启动协议</button>
+                    <button class="difficulty-btn secondary" onclick="hideCustomPanel()">返回</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- 游戏主界面 -->
+        <div id="game-screen" class="hidden">
+            <!-- 头部：重构为信息条 -->
+            <div class="game-header">
+                <div id="info-bar-left" class="info-bar-section">
+                     <div id="result-display" class="hidden">
+                        <h2 id="result-title"></h2>
+                        <p id="result-message"></p>
+                    </div>
+                </div>
+                <div id="info-bar-center" class="info-bar-section">
+                    <h2>缓冲区</h2>
+                    <div id="buffer-container"></div>
+                </div>
+                <div id="info-bar-right" class="info-bar-section">
+                    <div id="timer-container">
+                        <h2>剩余时间</h2>
+                        <div id="timer">--</div>
+                    </div>
+                    <div id="restart-button-container" class="hidden">
+                        <button class="difficulty-btn" onclick="resetToMenu()">返回菜单</button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 主内容：序列和矩阵 -->
+            <div class="game-main-content">
+                <div class="sequences-panel">
+                    <h2>:: 入侵序列</h2>
+                    <div id="sequences-container"></div>
+                </div>
+                <div class="matrix-panel">
+                    <h2>:: 代码矩阵</h2>
+                    <div id="code-matrix"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // --- 游戏设置 ---
+        const gameSettings = {
+            easy: { rows: 6, cols: 6, buffer: 6, sequences: 3, seqLength: [2, 3], time: 60, name: "低" },
+            medium: { rows: 7, cols: 7, buffer: 8, sequences: 4, seqLength: [3, 4], time: 45, name: "中" },
+            hard: { rows: 8, cols: 8, buffer: 9, sequences: 5, seqLength: [4, 5], time: 30, name: "高" },
+            nightmare: { rows: 9, cols: 9, buffer: 9, sequences: 5, seqLength: [4, 6], time: 25, name: "噩梦" }
+        };
+        const hexValues = ["1C", "55", "BD", "E9", "7A", "FF", "B3", "D4", "E6", "2F"];
+        const backgroundStreamElement = document.getElementById('background-stream');
+        let streamInterval;
+
+        // --- 游戏状态 ---
+        let currentSettings = {};
+        let codeMatrix = [];
+        let sequences = [];
+        let currentBuffer = [];
+        let timeLeft = 0;
+        let timerInterval;
+        let gameActive = false;
+        let currentSelectionMode = 'row';
+        let lastPosition = { row: -1, col: -1 };
+        let completedSequencesCount = 0;
+        let goldenPathCoords = [];
+
+        // --- DOM 元素 ---
+        const difficultyScreen = document.getElementById('difficulty-screen');
+        const difficultyOptions = document.getElementById('difficulty-options');
+        const gameScreen = document.getElementById('game-screen');
+        const bufferContainer = document.getElementById('buffer-container');
+        const timerDisplay = document.getElementById('timer');
+        const sequencesContainer = document.getElementById('sequences-container');
+        const codeMatrixContainer = document.getElementById('code-matrix');
+        const resultDisplay = document.getElementById('result-display');
+        const resultTitle = document.getElementById('result-title');
+        const resultMessage = document.getElementById('result-message');
+        const customPanel = document.getElementById('custom-panel');
+        
+        // --- v7: 打字机效果 ---
+        function typeWriter(element, text, callback) {
+            element.textContent = '';
+            element.style.animation = 'none'; // reset animation
+            void element.offsetWidth; // trigger reflow
+            element.style.animation = ''; // re-enable
+            element.style.width = '0';
+            let i = 0;
+            function type() {
+                if (i < text.length) {
+                    element.textContent += text.charAt(i);
+                    i++;
+                    setTimeout(type, 60);
+                } else {
+                    if (callback) setTimeout(callback, 500);
+                }
+            }
+            type();
+        }
+
+        // --- v7: 背景数据流 ---
+        function startBackgroundStream() {
+            function generateStreamContent() {
+                let content = '';
+                for (let i = 0; i < 100; i++) {
+                    content += getRandomHex() + ' ';
+                }
+                backgroundStreamElement.textContent = content.slice(0, 1000); // limit content length
+            }
+            generateStreamContent();
+            streamInterval = setInterval(generateStreamContent, 200);
+        }
+
+        function stopBackgroundStream() {
+            clearInterval(streamInterval);
+        }
+
+        // --- v7: 自定义面板逻辑 ---
+        function showCustomPanel() {
+            difficultyOptions.classList.add('hidden');
+            customPanel.classList.remove('hidden');
+            setupCustomSliders();
+        }
+
+        function hideCustomPanel() {
+            customPanel.classList.add('hidden');
+            difficultyOptions.classList.remove('hidden');
+        }
+
+        function setupCustomSliders() {
+            const inputs = {
+                rows: document.getElementById('c-rows'),
+                buffer: document.getElementById('c-buffer'),
+                time: document.getElementById('c-time'),
+                sequences: document.getElementById('c-sequences'),
+                seqLength: document.getElementById('c-seqLength')
+            };
+            const vals = {
+                rows: document.getElementById('c-rows-val'),
+                buffer: document.getElementById('c-buffer-val'),
+                time: document.getElementById('c-time-val'),
+                sequences: document.getElementById('c-sequences-val'),
+                seqLength: document.getElementById('c-seqLength-val')
+            };
+            
+            inputs.rows.oninput = () => { vals.rows.textContent = `${inputs.rows.value}x${inputs.rows.value}`; };
+            inputs.buffer.oninput = () => { vals.buffer.textContent = inputs.buffer.value; };
+            inputs.time.oninput = () => { vals.time.textContent = `${inputs.time.value}s`; };
+            inputs.sequences.oninput = () => { vals.sequences.textContent = inputs.sequences.value; };
+            inputs.seqLength.oninput = () => {
+                const min = Math.max(2, inputs.seqLength.value - 1);
+                vals.seqLength.textContent = `${min}-${inputs.seqLength.value}`;
+            };
+        }
+
+        function startCustomGame() {
+            const size = parseInt(document.getElementById('c-rows').value);
+            const seqLenVal = parseInt(document.getElementById('c-seqLength').value);
+            const customSettings = {
+                rows: size,
+                cols: size,
+                buffer: parseInt(document.getElementById('c-buffer').value),
+                sequences: parseInt(document.getElementById('c-sequences').value),
+                seqLength: [Math.max(2, seqLenVal - 1), seqLenVal],
+                time: parseInt(document.getElementById('c-time').value),
+                name: "自定义"
+            };
+            startGame(null, customSettings);
+        }
+
+        // --- 游戏逻辑 ---
+        function startGame(difficulty, customSettings = null) {
+            currentSettings = customSettings || gameSettings[difficulty];
+            gameActive = true;
+            completedSequencesCount = 0;
+            currentBuffer = [];
+            lastPosition = { row: -1, col: -1 };
+            currentSelectionMode = 'row';
+            
+            const generationResult = generateSolvablePuzzle();
+            if (!generationResult) {
+                alert("生成关卡失败，请尝试调整自定义参数或降低难度。");
+                resetToMenu();
+                return;
+            }
+            
+            sequences = generationResult.sequences;
+            codeMatrix = generationResult.matrix;
+            goldenPathCoords = generationResult.pathCoords;
+            
+            renderBuffer();
+            renderSequences();
+            renderCodeMatrix();
+
+            difficultyScreen.classList.add('hidden');
+            gameScreen.classList.remove('hidden');
+            
+            document.body.classList.remove('game-won', 'game-lost');
+            resultDisplay.classList.add('hidden');
+            document.getElementById('timer-container').classList.remove('hidden');
+            document.getElementById('restart-button-container').classList.add('hidden');
+            
+            startTimer();
+        }
+
+        function getRandomHex() {
+            return hexValues[Math.floor(Math.random() * hexValues.length)];
+        }
+
+        function generateSolvablePuzzle() {
+            // Path length should be less than buffer size to allow for mistakes
+            const pathLength = Math.floor(Math.random() * (currentSettings.buffer - 2)) + Math.min(4, currentSettings.buffer - 3);
+            if (pathLength < 2) return null; // Buffer too small
+            
+            const goldenPath = Array.from({ length: pathLength }, getRandomHex);
+            const { matrix, placed, pathCoords } = placePathInMatrix(goldenPath);
+            if (!placed) return null;
+            
+            let generatedSequences = [];
+            let pathIndices = Array.from(goldenPath.keys());
+            
+            for (let i = 0; i < currentSettings.sequences; i++) {
+                if (pathIndices.length < 2) break;
+                
+                const maxLen = Math.min(pathIndices.length, currentSettings.seqLength[1]);
+                const minLen = Math.min(maxLen, currentSettings.seqLength[0]);
+                if (minLen > maxLen) break;
+                
+                const len = Math.floor(Math.random() * (maxLen - minLen + 1)) + minLen;
+                if (pathIndices.length < len) continue;
+                
+                const start = pathIndices[Math.floor(Math.random() * (pathIndices.length - len + 1))];
+                const newSeq = goldenPath.slice(start, start + len);
+                
+                const indicesToRemove = Array.from({length: len}, (_, k) => start + k);
+                pathIndices = pathIndices.filter(idx => !indicesToRemove.includes(idx));
+                
+                generatedSequences.push({ id: i, seq: newSeq, reward: `数据包 ${i + 1}`, completed: false, currentIndex: 0 });
+            }
+            
+            while(generatedSequences.length < currentSettings.sequences){
+                 const len = currentSettings.seqLength[0];
+                 const seq = Array.from({length: len}, getRandomHex);
+                 generatedSequences.push({ id: generatedSequences.length, seq, reward: `数据包 ${generatedSequences.length + 1}`, completed: false, currentIndex: 0 });
+            }
+            
+            const finalMatrix = matrix;
+            for (let r = 0; r < currentSettings.rows; r++) {
+                for (let c = 0; c < currentSettings.cols; c++) {
+                    if (finalMatrix[r][c] === null) finalMatrix[r][c] = getRandomHex();
+                }
+            }
+            return { matrix: finalMatrix, sequences: generatedSequences, pathCoords: pathCoords };
+        }
+
+
+        // Here is a complete copy of them for convenience:
+        function placePathInMatrix(path) {
+            const matrix = Array(currentSettings.rows).fill(null).map(() => Array(currentSettings.cols).fill(null));
+            const pathCoords = [];
+
+            if (path.length === 0) return { matrix, placed: true, pathCoords };
+
+            const startCol = Math.floor(Math.random() * currentSettings.cols);
+            const startRow = 0;
+            matrix[startRow][startCol] = path[0];
+            let lastPos = { r: startRow, c: startCol };
+            pathCoords.push(lastPos);
+            let currentMode = 'col';
+
+            for (let i = 1; i < path.length; i++) {
+                const availableCoords = [];
+                if (currentMode === 'col') {
+                    for (let r = 0; r < currentSettings.rows; r++) {
+                        if (r !== lastPos.r && matrix[r][lastPos.c] === null) {
+                            availableCoords.push({ r: r, c: lastPos.c });
+                        }
+                    }
+                } else {
+                    for (let c = 0; c < currentSettings.cols; c++) {
+                        if (c !== lastPos.c && matrix[lastPos.r][c] === null) {
+                            availableCoords.push({ r: lastPos.r, c: c });
+                        }
+                    }
+                }
+
+                if (availableCoords.length === 0) {
+                    return { matrix, placed: false, pathCoords: [] };
+                }
+                
+                const nextPos = availableCoords[Math.floor(Math.random() * availableCoords.length)];
+                matrix[nextPos.r][nextPos.c] = path[i];
+                lastPos = nextPos;
+                pathCoords.push(lastPos);
+                currentMode = currentMode === 'col' ? 'row' : 'col';
+            }
+
+            return { matrix, placed: true, pathCoords };
+        }
+        
+        function renderBuffer() {
+            bufferContainer.innerHTML = '';
+            for (let i = 0; i < currentSettings.buffer; i++) {
+                const val = currentBuffer[i] || '';
+                const filledClass = val ? 'filled' : '';
+                bufferContainer.innerHTML += `<div class="buffer-box ${filledClass}">${val}</div>`;
+            }
+        }
+
+        function renderSequences() {
+            sequencesContainer.innerHTML = '';
+            sequences.forEach(s => {
+                const completedClass = s.completed ? 'completed' : '';
+                let codeHtml = '';
+                for (let j = 0; j < s.seq.length; j++) {
+                    const val = s.seq[j];
+                    let partClass = 'code-part';
+                    if (j < s.currentIndex) { partClass += ' matched'; }
+                    else if (j === s.currentIndex && !s.completed) { partClass += ' next-match'; }
+                    codeHtml += `<span class="${partClass}">${val}</span>`;
+                }
+                sequencesContainer.innerHTML += `
+                    <div id="seq-${s.id}" class="sequence-item ${completedClass}">
+                        <div class="code">
+                            <span class="reward">${s.reward}: </span>
+                            ${codeHtml}
+                        </div>
+                    </div>`;
+            });
+        }
+        
+        function renderCodeMatrix() {
+            codeMatrixContainer.innerHTML = '';
+            codeMatrixContainer.style.setProperty('--cols', currentSettings.cols);
+            for (let r = 0; r < currentSettings.rows; r++) {
+                for (let c = 0; c < currentSettings.cols; c++) {
+                    const val = codeMatrix[r][c];
+                    const disabled = r !== 0; 
+                    codeMatrixContainer.innerHTML += `
+                        <button id="cell-${r}-${c}" class="code-cell" onclick="handleCellClick(${r}, ${c})" ${disabled ? 'disabled' : ''}>
+                            ${val}
+                        </button>`;
+                }
+            }
+        }
+
+        function startTimer() {
+            timeLeft = currentSettings.time;
+            timerDisplay.textContent = timeLeft;
+            timerDisplay.classList.remove('low-time');
+            clearInterval(timerInterval);
+            timerInterval = setInterval(() => {
+                timeLeft--;
+                timerDisplay.textContent = timeLeft;
+                if (timeLeft <= 10) { timerDisplay.classList.add('low-time'); }
+                if (timeLeft <= 0) { endGame(false); }
+            }, 1000);
+        }
+
+        function handleCellClick(r, c) {
+            if (!gameActive) return;
+            const cell = document.getElementById(`cell-${r}-${c}`);
+            const value = codeMatrix[r][c];
+            currentBuffer.push(value);
+            renderBuffer();
+            cell.classList.add('selected');
+            cell.disabled = true;
+            lastPosition = { row: r, col: c };
+            currentSelectionMode = (currentSelectionMode === 'row') ? 'col' : 'row';
+            updateMatrixAvailability();
+            checkSequences(value);
+            renderSequences();
+            if (gameActive && completedSequencesCount === sequences.length) { endGame(true); return; }
+            if (gameActive && currentBuffer.length >= currentSettings.buffer) { endGame(true); return; }
+        }
+
+        function updateMatrixAvailability() {
+            for (let r = 0; r < currentSettings.rows; r++) {
+                for (let c = 0; c < currentSettings.cols; c++) {
+                    const cell = document.getElementById(`cell-${r}-${c}`);
+                    if (!cell || cell.classList.contains('selected')) continue;
+                    let canClick = false;
+                    if (currentSelectionMode === 'row') { canClick = (r === lastPosition.row); }
+                    else { canClick = (c === lastPosition.col); }
+                    cell.disabled = !canClick;
+                }
+            }
+        }
+
+        function checkSequences(value) {
+            sequences.forEach(s => {
+                if (s.completed) return;
+                const expectedValue = s.seq[s.currentIndex];
+                if (value === expectedValue) {
+                    s.currentIndex++;
+                    if (s.currentIndex === s.seq.length) {
+                        s.completed = true;
+                        completedSequencesCount++;
+                    }
+                }
+            });
+        }
+        
+        // --- Updated endGame and resetToMenu functions ---
+        function endGame(bufferFullOrAllDone) {
+            if (!gameActive) return;
+            gameActive = false;
+            clearInterval(timerInterval);
+            document.querySelectorAll('.code-cell').forEach(cell => { if(cell) cell.disabled = true; });
+
+            if (goldenPathCoords && goldenPathCoords.length > 0) {
+                goldenPathCoords.forEach((coord, index) => {
+                    const cell = document.getElementById(`cell-${coord.r}-${coord.c}`);
+                    if (cell) {
+                        if (!cell.classList.contains('selected')) {
+                            cell.style.borderColor = 'var(--color-cyber-red)';
+                            cell.style.color = 'var(--color-cyber-red)';
+                            cell.style.opacity = '0.7';
+                        }
+                        cell.innerHTML += `<span class="solution-step">${index + 1}</span>`;
+                    }
+                });
+            }
+
+            let title, message, outcomeClass;
+            if (timeLeft <= 0 || (bufferFullOrAllDone && completedSequencesCount === 0)) {
+                title = "协议失败";
+                message = timeLeft <= 0 ? "时间耗尽" : "缓冲区溢出";
+                outcomeClass = 'game-lost';
+                resultTitle.style.color = 'var(--color-cyber-red)';
+            } else {
+                title = "协议成功";
+                message = `破解 ${completedSequencesCount}/${sequences.length} 序列`;
+                outcomeClass = 'game-won';
+                resultTitle.style.color = 'var(--color-cyber-green)';
+            }
+            
+            document.body.classList.add(outcomeClass);
+            resultTitle.textContent = title;
+            resultMessage.textContent = message;
+            resultDisplay.classList.remove('hidden');
+            document.getElementById('timer-container').classList.add('hidden');
+            document.getElementById('restart-button-container').classList.remove('hidden');
+        }
+        
+        function resetToMenu() {
+            gameScreen.classList.add('hidden');
+            difficultyScreen.classList.remove('hidden');
+            
+            document.body.classList.remove('game-won', 'game-lost');
+            document.getElementById('timer-container').classList.remove('hidden');
+            document.getElementById('restart-button-container').classList.add('hidden');
+            resultDisplay.classList.add('hidden');
+            
+            // Re-trigger typewriter animation
+            const prompt = document.getElementById('difficulty-prompt');
+            prompt.classList.remove('typewriter'); // Temporarily remove class
+            void prompt.offsetWidth; // Force reflow
+            prompt.classList.add('typewriter'); // Re-add to restart animation
+            
+            typeWriter(document.getElementById('difficulty-prompt'), "选择威胁等级：", () => {
+                difficultyOptions.classList.remove('hidden');
+            });
+        }
+
+        // --- Initial setup ---
+        document.addEventListener('DOMContentLoaded', () => {
+            const prompt = document.getElementById('difficulty-prompt');
+            typeWriter(prompt, "选择威胁等级：", () => {
+                difficultyOptions.classList.remove('hidden');
+            });
+            startBackgroundStream();
+            setupCustomSliders(); // Initialize sliders for custom panel
+        });
+
+    </script>
+
+</body>
+</html>
